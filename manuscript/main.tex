@@ -1,0 +1,90 @@
+\documentclass[letterpaper]{article}
+\usepackage{iclr2027_conference,times}
+\usepackage{amsmath,amssymb,graphicx,booktabs}
+\usepackage{hyperref}
+\usepackage{url}
+
+% Official anonymous review mode: do not enable \iclrfinalcopy.
+% Structural starter only. All content remains to be migrated and verified.
+\title{RelaySpec: Adapting Frozen Speculative Drafters through Linear Feature Interfaces}
+\author{Anonymous authors}
+\newcommand{\draftnote}[1]{\par\noindent\textit{Drafting note: #1}\par}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+Structural starter for section-by-section drafting. Replace this paragraph with the verified problem, approach, quantitative findings, and scope after completing the evidence audit. This document is not a submission-ready manuscript.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:introduction}
+\draftnote{Problem, motivation, shared interface idea, two adaptation settings, and three supported contributions.}
+
+\section{Related Work}
+\label{sec:related}
+\draftnote{Feature-conditioned drafting; draft adaptation and reuse; linear interfaces and structural re-parameterization.}
+
+\section{Background and Problem Formulation}
+\label{sec:problem}
+\draftnote{Define target, reference model, drafter, feature interface, frozen parameters, and both adaptation settings.}
+
+\section{RelaySpec}
+\label{sec:method}
+\subsection{Linear Feature Interface}
+\draftnote{Feature maps, dimensions, normalization, initialization, and training/export overview figure.}
+\subsection{Adaptation to Fine-Tuned Targets}
+\draftnote{Target-generated supervision, attributed objective, and gradient flow.}
+\subsection{Cross-Model Transfer}
+\draftnote{Feature pairing, reconstruction objective, and tokenizer alignment.}
+\subsection{Export and Inference}
+\draftnote{Folding, runtime selection, cache semantics, and correctness assumptions.}
+
+\section{Experiments}
+\label{sec:experiments}
+\subsection{Experimental Setup and Metrics}
+\draftnote{Models, datasets, splits, selection, baselines, hardware, decoding, and metric denominators.}
+\subsection{Adaptation to Fine-Tuned Targets}
+\draftnote{Matched specialization results and strongest adaptation controls.}
+\subsection{Cross-Model Transfer}
+\draftnote{All transfer directions, workload variation, native recovery, and missing controls.}
+\subsection{Shared Serving and Adaptation Cost}
+\draftnote{Concurrency, per-request versus aggregate throughput, and measured cost with exclusions.}
+
+\section{Analysis and Limitations}
+\label{sec:analysis}
+\subsection{Interface and Objective Controls}
+\draftnote{Interpret matched evidence and identify remaining confounds.}
+\subsection{Mechanistic Interventions}
+\draftnote{Identity preservation, directional corrections, reconstruction interventions, and counterexamples.}
+\subsection{Supervision and Cost Tradeoffs}
+\draftnote{Data, anchors, coverage, checkpoint selection, and fitting cost.}
+\subsection{Limitations}
+\draftnote{Final verified scope, failure regimes, statistical limits, and reproduction gaps.}
+
+\section{Conclusion}
+\label{sec:conclusion}
+\draftnote{Answer the central research question without introducing new claims.}
+
+\subsection*{AI Use Statement}
+\draftnote{Accurate disclosure of actual AI uses and author verification; also complete the submission form.}
+\subsection*{Ethics Statement}
+\draftnote{Relevant impacts, data provenance/privacy, and application limits.}
+\subsection*{Reproducibility Statement}
+\draftnote{Point to specific available recipes, code, manifests, and proof details.}
+
+% Once verified citations have been added, replace the temporary heading with:
+% \bibliography{references}
+% \bibliographystyle{iclr2027_conference}
+\section*{References}
+\draftnote{Add verified author-year references using the official bibliography style.}
+
+\clearpage
+\appendix
+\section{Experimental Reproducibility}
+\section{Architecture, Alignment, and Verification}
+\section{Complete Adaptation Controls}
+\section{Supervision and Cost Results}
+\section{Serving Results}
+\section{Additional Mechanistic Evidence}
+\section{Extended Related-Work Comparison}
+\end{document}

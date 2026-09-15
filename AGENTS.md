@@ -1,0 +1,67 @@
+# Writing rules for this workspace
+
+Apply these rules when drafting, editing, reviewing, or explaining the RelaySpec paper and its supporting material.
+
+## Source roles
+
+- RelaySpec is the main paper being drafted for ICLR.
+- Phase 1 and phase 2 are experimental reports of the research and experiments. They are evidence sources, not canonical papers.
+- Verify the manuscript one section at a time against the experimental reports. Preserve the distinction between reported results and independently verified results.
+
+## Required evidence checks
+
+Before drafting, revising, or explaining technical claims in the paper, always consult the relevant material in both Phase 1 and Phase 2 and the supplied Markdown reports:
+
+- `phase1.pdf` and `phase2 (1).pdf`
+- `phase1_results.md` and `phase1_probe.md`
+- `phase2_results.md` and `phase2_probe.md`
+- Any original experiment notes referenced by those reports when needed to resolve a claim.
+
+Use the PDFs for the research narrative and the Markdown reports for procedures, measured results, controls, and qualifications. Do not derive motivation solely from model dimensions or a plausible explanation. Check the actual comparisons and probes. Distinguish motivation, observation, interpretation, and untested hypotheses. Preserve recipe differences, metric definitions, incomplete coverage, and negative results. Do not combine historical checkpoints or different experiments into one result. If sources disagree, identify the discrepancy and use the supported, explicitly scoped result. Record important claim-to-source links in the manuscript source log.
+
+## Reference-paper style
+
+Consult the relevant papers in `relayspec_ref/` when organizing and writing manuscript sections. Follow their concise research-paper structure: concrete problem, method intuition, brief procedure, supporting evidence, and specific contributions. Use original wording relevant to RelaySpec. Do not copy prose or import another paper's claims. The simple-English rules below continue to apply. Keep established concepts in Preliminaries, comparisons in Related Work, and detailed RelaySpec procedures in Method.
+
+## Required writing style
+
+Write in simple, direct academic English. Keep the meaning technically correct. Explain each point in normal language instead of compressing ideas into research buzzwords.
+
+- Be straight to the point.
+- Do not add filler, hype, vague claims, or unnecessary background.
+- Do not stack technical terms together when a normal sentence can explain the idea.
+- Use the correct technical term only when it is needed. Make its meaning clear from the sentence.
+- Prefer concrete explanations of what is being done, measured, or compared.
+- Avoid phrases such as "first-error localization", "transfer dynamics", "representation quality", and "specialization-generalization trade-off" unless they are necessary. Explain what they mean directly.
+- Write "deterministic checks" instead of "symbolic verification" when that accurately describes the procedure.
+- Do not use em dashes.
+- Do not use semicolons in prose. Preserve them in code or mathematical notation when required for correctness.
+- Keep sentences reasonably short.
+- Do not use overly formal, inflated, or unnecessarily complicated wording.
+- Do not repeat the same idea in different words.
+- Do not introduce new claims to make the writing sound stronger.
+- Preserve important experimental details, assumptions, limitations, equations, datasets, model names, and citations.
+- Make every paragraph answer a clear question: what are we doing, why are we doing it, or how will we measure it?
+- Write so that a technically capable undergraduate can understand the text on the first read without losing the research meaning.
+
+The target style is a researcher clearly explaining the work to another researcher. Be concise, concrete, and natural. Do not try to make the work sound sophisticated.
+
+## Explain the procedure before naming it
+
+For each section, explain the actual procedure before naming or summarizing it. Introduce a technical label afterward only if it is useful.
+
+Examples:
+
+- Prefer "check whether the model can identify where a proposed solution first becomes wrong" over "first-error localization".
+- Prefer "We train a fresh copy of the student on only one task form and then test it on all five forms" over "We construct a directed cross-task transfer matrix". The term "transfer matrix" may be used afterward once the text explains what it represents.
+- Prefer "Prior work shows that training on one task can help some other tasks much more than others" over "Prior work finds asymmetric transfer after task-specific fine-tuning".
+
+These examples illustrate style. They do not establish procedures or findings for RelaySpec.
+
+## Citations and cross-references
+
+Use citations and cross-references wherever needed to support claims and help readers find relevant material. Refer to the appendix, sections, figures, tables, and equations when appropriate, including from the main paper. Make each reference accurate and specific. Cite prior work where its ideas, methods, or findings are used.
+
+## Check before finishing a section
+
+Confirm that the text explains the actual procedure, comparison, or measurement. Remove repeated points and unnecessary jargon. Check that simpler wording preserves the technical meaning, evidence, assumptions, and limitations. Check that prose contains no em dashes or semicolons.

@@ -1,0 +1,15 @@
+# Generated archives and scratch files
+*.zip
+/tmp/
+**/build/
+__pycache__/
+*.pyc
+
+# LaTeX build intermediates (compiled PDFs are retained)
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
