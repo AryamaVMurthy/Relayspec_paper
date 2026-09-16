@@ -12,7 +12,7 @@ Apply these rules when drafting, editing, reviewing, or explaining the RelaySpec
 
 Before drafting, revising, or explaining technical claims in the paper, always consult the relevant material in both Phase 1 and Phase 2 and the supplied Markdown reports:
 
-- `phase1.pdf` and `phase2 (1).pdf`
+- `phase1.pdf` and `phase2.pdf`
 - `phase1_results.md` and `phase1_probe.md`
 - `phase2_results.md` and `phase2_probe.md`
 - Any original experiment notes referenced by those reports when needed to resolve a claim.
@@ -45,6 +45,19 @@ Write in simple, direct academic English. Keep the meaning technically correct. 
 - Write so that a technically capable undergraduate can understand the text on the first read without losing the research meaning.
 
 The target style is a researcher clearly explaining the work to another researcher. Be concise, concrete, and natural. Do not try to make the work sound sophisticated.
+
+## Numerical reporting
+
+- Every table column containing numeric measurements must identify the metric and its unit in the column heading or table caption. Stating the unit once is sufficient. It does not need to be repeated in every cell.
+- Use the full metric name. In particular, write "acceptance length", not "acceptance". Define $\tau$ as tokens per verification step wherever a table could otherwise be ambiguous.
+- Label throughput in tokens/s. Write speedups with the multiplication sign, such as $1.2\times$, and percentages with the percent sign.
+- Name dimensionless quantities explicitly, such as cosine similarity or an error ratio. Do not present unexplained raw numbers.
+
+## Analysis appendix coverage
+
+- Every experimental probe cited or interpreted in the main analysis must have its complete measured results in the appendix, including matching controls, all tested variants, negative results, metric definitions, units, and material limitations.
+- Link each main-text probe claim to the corresponding appendix subsection or table.
+- Additional completed probes may be reported in the appendix even when they are omitted from the main argument. Clearly distinguish complete results from partial, stopped, or confounded runs.
 
 ## Explain the procedure before naming it
 

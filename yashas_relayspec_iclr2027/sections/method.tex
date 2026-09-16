@@ -1,0 +1,7 @@
+\subsection{Training the interface maps}
+
+\paragraph{LoRA-fine-tuned targets.}
+For a LoRA-fine-tuned target, each map is square and starts from the identity. The maps therefore pass the target hidden states to the existing fusion projection unchanged at initialization. This preserves the behavior of the unchanged drafter with that target. Training then changes the mapped features so that they better condition the frozen drafter to predict the target's tokens. We use accept-until-fail (AUF)~\citep{yang2026specauf}. Cross-entropy on saved target responses supervises the correct draft prefix and the first incorrect proposal. Positions after that error are excluded because verification would stop there.
+
+\paragraph{Cross-model transfer.}
+The drafter was trained to process hidden states from its original target. A new target can produce different features and can have a different hidden-state width. We run the original and new targets on the same saved text and train each linear map to reconstruct the corresponding original-target feature from the new-target feature. The MSE objective also reconstructs the combined context after the frozen fusion projection and RMSNorm. Each feature error and the context error are divided by the squared norm of the corresponding original-target vector plus a small constant for numerical stability.
