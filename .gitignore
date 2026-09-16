@@ -14,3 +14,4 @@ __pycache__/
 *.fdb_latexmk
 *.synctex.gz
 **/build_full/
+**/build_9pg/

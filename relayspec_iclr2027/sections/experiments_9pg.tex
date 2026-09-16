@@ -1,0 +1,73 @@
+\subsection{Experimental setup}
+\label{sec:setup}
+
+\textbf{Models and references.} Every DFlash experiment starts from one pretrained checkpoint released for Qwen3-4B~\citep{chen2026dflash,yang2025qwen3}; Section~\ref{sec:eagle} additionally uses published EAGLE-3 checkpoints, which read three streams~\citep{li2025eagle3}. No draft transformer is ever trained. In the \emph{fine-tuned} setting the target carries a LoRA adapter the released drafter has never seen~\citep{hu2022lora}: Qwen3-4B with a GSM8K, KiCad or NanoCoder adapter, and Qwen3-8B with a GSM8K or CodeAlpaca~\citep{chaudhary2023codealpaca} adapter. In the \emph{replaced} setting we evaluate four transfers, named by the target they accelerate and the model the drafter came from: Qwen3-8B from Qwen3-4B, Qwen3-4B from Qwen3-8B, Llama3.1-8B from Qwen3-4B, and Llama3.2-3B from Llama3.1-8B~\citep{grattafiori2024llama3}; only the third has mismatched tokenizers and uses the proposal bridge of Section~\ref{sec:method-generation}. Maps are $2560\times2560$ when the target keeps the drafter's feature width (32.8M parameters) and $2560\times4096$ for Qwen3-8B (52.4M). For a fine-tuned target the reference is the \emph{unadapted drafter}, the released checkpoint run with no adaptation, because that is what a deployment would otherwise use; for a replaced target it is the \emph{native drafter}, one trained for the target being accelerated.
+
+\textbf{Metrics.} \emph{Speedup} is mean per-request throughput divided by that of autoregressive decoding of the same target on the same prompts, so autoregressive decoding is $1.00\times$ by definition. \emph{Acceptance length} $\tau$ is pooled emitted tokens per verification step including the correction token. Aggregate serving throughput divides total returned tokens by workload wall time including drain. These statistics weight requests differently and we never mix them inside one comparison. Where an ablation must choose one configuration we select by the harmonic mean of its per-workload speedups, because the harmonic mean of ratios is pulled down by the smallest entry and will not let a configuration hide one weak workload behind a favourable average.
+
+\textbf{Data and implementation.} Transfer experiments use MATH test~\citep{hendrycks2021math}, GSM8K test~\citep{cobbe2021gsm8k}, pinned LiveCodeBench releases~\citep{jain2024livecodebench} and single-turn UltraFeedback instructions~\citep{cui2024ultrafeedback}, reported as Math, GSM8K, Code and Chat; fine-tuned experiments use held-out prompts from the adapter's own domain. Every cell uses 128 held-out prompts with a 2{,}048-token cap, except KiCad at 8{,}192. Fine-tuned fits use 4{,}096 target-generated responses, 32 anchors per example and one epoch, 512 updates at global batch 8 with AdamW~\citep{loshchilov2019adamw} at learning rate $10^{-4}$; transfer fits reuse 16{,}384 saved NuminaMath~\citep{li2024numinamath} trajectories at 25\% position coverage for three epochs, 6{,}144 updates at learning rate $10^{-3}$. Both use seed 42 on two L40S GPUs with FP32 trainable maps over a frozen BF16 model. Single-request measurements use Transformers~\citep{wolf2020transformers} with greedy non-thinking decoding; serving uses vLLM 0.28.0~\citep{kwon2023vllm} with batch-invariant operations and FlashAttention~\citep{dao2023flashattention2}, and stacks such as SGLang~\citep{zheng2024sglang} differ. In the selected single-request comparisons all drafters returned identical output sequences on all 128 prompts. Appendix~\ref{app:setup-full} gives the remaining detail.
+
+\subsection{Main results}
+\label{sec:main-results}
+Table~\ref{tab:main} reports every target, workload and reference in one place. Two conclusions follow from it.
+
+\begin{table}[t]
+\centering
+\caption{Complete single-request results. AR is the measured autoregressive tokens per second for that target on that workload, the common $1.00\times$ baseline for every speedup in the row. Speedup is mean per-request throughput divided by AR. $\tau$ is average acceptance length including the correction token. The reference for a fine-tuned target is the released drafter used with no adaptation, so $\times$ref above 1 is an improvement over what a deployment would otherwise run. The reference for a replaced target is a drafter trained for that target, so $\times$ref near 1 means RelaySpec matches target-specific drafter training without performing any. A target written $A\leftarrow B$ is target $A$ accelerated by a drafter built for $B$. Bold marks $\times$ref at or above parity.}
+\label{tab:main}
+\small
+\setlength{\tabcolsep}{4.2pt}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & & \multicolumn{2}{c}{RelaySpec} & \multicolumn{2}{c}{Reference drafter} & \\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+Target $\leftarrow$ drafter & Workload & AR & Speedup & $\tau$ & Speedup & $\tau$ & $\times$ref \\
+\midrule
+\multicolumn{8}{l}{\emph{Fine-tuned target. Reference is the released drafter, used unadapted.}} \\
+Qwen3-4B + GSM8K LoRA & GSM8K & 38.81 & 4.63$\times$ & 5.99 & 3.32$\times$ & 4.47 & \textbf{1.40} \\
+Qwen3-4B + KiCad LoRA & KiCad & 38.42 & 8.13$\times$ & 11.26 & 4.39$\times$ & 5.99 & \textbf{1.85} \\
+Qwen3-4B + NanoCoder LoRA & NanoCoder & 39.01 & 4.40$\times$ & 5.55 & 3.87$\times$ & 5.11 & \textbf{1.14} \\
+Qwen3-8B + GSM8K LoRA & GSM8K & 37.89 & 4.59$\times$ & 6.35 & 3.40$\times$ & 4.76 & \textbf{1.35} \\
+Qwen3-8B + CodeAlpaca LoRA & CodeAlpaca & 37.56 & 4.32$\times$ & 5.63 & 4.07$\times$ & 5.62 & \textbf{1.06} \\
+\midrule
+\multicolumn{8}{l}{\emph{Replaced target. Reference is a drafter trained for the target being accelerated.}} \\
+Qwen3-8B $\leftarrow$ Qwen3-4B & Math & 37.84 & 5.82$\times$ & 7.98 & 5.81$\times$ & 8.21 & \textbf{1.00} \\
+ & GSM8K & 37.76 & 4.68$\times$ & 6.24 & 4.71$\times$ & 6.48 & 0.99 \\
+ & Code & 37.50 & 3.40$\times$ & 4.74 & 4.04$\times$ & 5.64 & 0.84 \\
+ & Chat & 35.09 & 2.31$\times$ & 2.89 & 2.55$\times$ & 3.32 & 0.90 \\
+\addlinespace[1pt]
+Qwen3-4B $\leftarrow$ Qwen3-8B & Math & 39.42 & 5.49$\times$ & 7.66 & 5.70$\times$ & 8.09 & 0.96 \\
+ & GSM8K & 39.72 & 4.27$\times$ & 5.99 & 4.46$\times$ & 6.34 & 0.96 \\
+ & Code & 39.60 & 3.30$\times$ & 4.89 & 4.34$\times$ & 6.26 & 0.76 \\
+ & Chat & 40.48 & 2.01$\times$ & 2.83 & 2.36$\times$ & 3.36 & 0.85 \\
+\addlinespace[1pt]
+Llama3.1-8B $\leftarrow$ Qwen3-4B & Math & 41.00 & 2.97$\times$ & 4.63 & 3.17$\times$ & 5.12 & 0.94 \\
+ & GSM8K & 41.11 & 2.21$\times$ & 3.23 & 3.10$\times$ & 4.42 & 0.71 \\
+ & Code & 40.79 & 1.98$\times$ & 3.05 & 3.00$\times$ & 4.52 & 0.66 \\
+ & Chat & 40.96 & 1.48$\times$ & 2.06 & 2.79$\times$ & 3.95 & 0.53 \\
+\bottomrule
+\end{tabular}
+\setlength{\tabcolsep}{6pt}
+\end{table}
+
+\textbf{Adapting a fine-tuned target's features recovers a large share of lost drafting quality.} Training only the five maps improves every adapter at both target scales, from $+6\%$ on CodeAlpaca to $+85\%$ on KiCad, and raises acceptance length in every cell. The gain tracks acceptance: KiCad nearly doubles acceptance length, 5.99 to 11.26, reaching $8.13\times$ autoregressive throughput, whereas CodeAlpaca moves from 5.62 to 5.63 and gains little.
+
+\textbf{A drafter can be moved to a different target model and still approach one built for it.} Every transfer accelerates its target on every workload. Within the Qwen3 family the maps reach $1.002\times$ and $0.994\times$ of a native drafter on Math and GSM8K when moving up in scale, with no target-specific drafter training; recovery is lower on Code and Chat, and lower again across families, so the setting is effective within a family and partial across one. A fifth transfer, a Llama3.1-8B drafter reused for Llama3.2-3B, reaches $2.35\times$ autoregressive throughput on Math and above $1.6\times$ on every workload (Appendix~\ref{app:llama-table}).
+
+\subsection{Ablation studies}
+\label{sec:ablations}
+We ablate the three decisions that define the method. Appendix~\ref{app:ablations} reports all of them in full.
+
+\textbf{Where the trained parameters sit.} Training one matrix of the same total size in place of the five maps, initialized to exactly the function the five maps start from, reaches a harmonic mean of 1.265 against 1.376 for the five maps and loses 45 points of gain on KiCad; transferring to Qwen3-8B it reaches $0.365\times$ the native drafter on Math while the five maps reach $0.884\times$. The factorization does the work, not the parameter count, which is the behaviour structural re-parameterization predicts~\citep{huo2026repspec}. Low-rank replacement of each whole map degrades monotonically. Draft-transformer LoRA is competitive and wins on NanoCoder, so we do not claim input adaptation beats body adaptation on every workload; its cost is that the draft transformer is no longer shared.
+
+\textbf{Which objective trains the maps.} For a fine-tuned target the two token objectives are nearly tied on the arithmetic mean, 1.451 against 1.445, but the harmonic mean separates them, 1.376 for accept-until-fail against 1.353 for decaying cross-entropy, because it refuses to let the 1.031 NanoCoder entry be averaged away. Reconstruction on the same targets reaches only 1.052. For a replaced target the ordering reverses and becomes decisive: both reconstruction variants exceed 0.918 while the best token objective reaches 0.623, the gap coming almost entirely from Code and Chat where token supervision collapses to 0.406 and 0.573. We therefore select accept-until-fail for fine-tuned targets and reconstruction for replaced ones, and the pairing does real work in both directions (Appendix~\ref{app:objective-table}).
+
+\textbf{Whether the maps need to be nonlinear.} Adding a parallel branch so stream $i$ contributes $W_ih_i+B_i\operatorname{SiLU}(A_ih_i)$~\citep{elfwing2018silu}, with $B_i$ initialized to zero so training starts at exactly the linear solution, changes throughput by between $-2.07\%$ and $+2.97\%$, leaves acceptance length almost unchanged, and is behind the linear map on five of seven workloads while carrying 16 to 20 percent more parameters and remaining an active computation at inference.
+
+\textbf{How much supervision the maps need.} Adaptation is effective from as few as 16 examples, and throughput rises smoothly without saturating out to 16{,}384: GSM8K goes from $+10.8\%$ to $+45.0\%$ and KiCad from $+5.0\%$ to $+113.0\%$, while transfer recovery rises from 15.6\% to 99.9\% on Math and 18.9\% to 84.8\% on Code (Appendix Figure~\ref{fig:scaling}). The main results are therefore conservative operating points rather than ceilings.
+
+\subsection{Generalization, comparison and cost}
+\label{sec:eagle}
+\textbf{A second drafter family.} We repeat both settings on published EAGLE-3 checkpoints, which read three target streams and draft one token at a time, pairing each setting with the objective selected above. Adapting the inputs of a frozen EAGLE-3 drafter improves it in both settings, by 45.9\% to 105.7\% on fine-tuned targets and above a purpose-built Qwen3-8B EAGLE-3 drafter on all four transfer workloads (Appendix~\ref{app:eagle-table}). Against autoregressive decoding of the same fine-tuned target it reaches $3.82\times$, $3.75\times$ and $5.00\times$ on GSM8K, NanoCoder and KiCad, against $2.26\times$, $2.57\times$ and $2.43\times$ unadapted. The objective selection also replicates: training the same three maps by reconstruction instead gives 71.89, 75.34 and 78.70 tokens per second, a 7.9\% regression on NanoCoder, while token supervision gives 120.35, 119.30 and 151.86 on the same prompts. Pairing the objective to the setting is therefore not a DFlash artifact.
+
+\textbf{Published systems, serving and cost.} An earlier single-projection version of this interface, compared on the same 128 MATH development questions against PARD~\citep{an2026pard} and frozen-drafter SD$^2$~\citep{berdoz2026steering} with each measured against its own runtime's autoregressive baseline, reaches $5.14\times$ [4.90, 5.37] against $3.34\times$ and $1.60\times$ (Appendix~\ref{app:public-runtime}). Under vLLM with three LoRA targets sharing one draft backbone, aggregate server throughput is higher for the adapted drafter at every concurrency, reaching 4{,}324 tokens per second against 2{,}440 unadapted and 828 autoregressive at 32 clients, one pooled set of maps reaches 98.9--99.6\% of three separate sets, and adaptation adds a constant 0.33 GiB. Against the published DFlash recipe of about 800{,}000 samples for six epochs~\citep{chen2026dflash}, our recipes use 4{,}096 and 16{,}384 examples, about 195 and 49 times fewer, each fitting in under half an hour on two GPUs (Appendix~\ref{app:ablations}).

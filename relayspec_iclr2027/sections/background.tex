@@ -1,22 +1,24 @@
-\subsection{Targets, drafters, and notation}
+\subsection{DFlash block drafting}
 \label{sec:dflash-background}
-The \emph{original target} is the model used to train the available drafter. The \emph{new target} is the model to be accelerated. A \emph{native drafter} is trained for the target being evaluated. In cross-model transfer, the original target used for feature reconstruction and the native drafter used as a performance baseline are therefore different objects.
 
-DFlash predicts a block of candidate tokens from an anchor token and masked future positions in one forward pass. It fuses selected target hidden states and uses the resulting context to supply keys and values to every draft layer~\citep{chen2026dflash}. A drafter of this kind reads $K$ feature streams, five for our DFlash checkpoints and three for EAGLE-3~\citep{li2025eagle3}. We write the original target's feature at stream $i$ and position $t$ as $h^{(o)}_{i,t}\in\mathbb R^{d_r}$. The original fusion blocks $F_i\in\mathbb R^{d_d\times d_r}$ produce
+The \emph{original target} is the model used to train the available drafter, which we call the original target's \emph{native drafter}. The \emph{new target} is the model we want to accelerate.
+
+DFlash predicts several future tokens in parallel~\citep{chen2026dflash}. At each decoding step, it forms a block with the last token committed by the target, called the \emph{anchor}, followed by masked proposal positions. The released Qwen3-4B DFlash checkpoint has a default block size of 16, so each block contains one anchor and 15 proposals. We keep this setting. The DFlash reference generator also defaults to temperature zero, so we use greedy decoding. One drafter pass predicts all 15 proposals, and the target checks them in parallel. With greedy verification, speculative decoding is theoretically guaranteed to produce the same token sequence as greedy target-only decoding~\citep{leviathan2023speculative,chen2023sampling}.
+
+\subsection{The target-feature interface}
+
+DFlash also conditions the drafter on hidden-state representations from five fixed target layers. We use $d_t$ for the new target's hidden-state width, $d_r$ for the original target's hidden-state width expected by the reused fusion projection, and $d_d$ for the drafter transformer's hidden width. Let $h^{(o)}_{i,t}\in\mathbb R^{d_r}$ be the original target's representation at token $t$ from layer $i$. The original fusion projection has five blocks $F_i\in\mathbb R^{d_d\times d_r}$. Their horizontal concatenation is $F=[F_1\;\cdots\;F_5]\in\mathbb R^{d_d\times 5d_r}$. For one token, DFlash computes
 \begin{equation}
- c^{(o)}_t=N\!\left(\sum_{i=1}^{K}F_i h^{(o)}_{i,t}\right),
- \qquad F=[F_1\;\cdots\;F_K].
+ c^{(o)}_t=N\!\left(\sum_{i=1}^{5}F_i h^{(o)}_{i,t}\right)\in\mathbb R^{d_d},
  \label{eq:native-fusion}
 \end{equation}
-Here $d_d$ is the draft hidden width and $N$ is the original RMSNorm, which normalizes vector magnitude and applies learned coordinate-wise gains~\citep{zhang2019rmsnorm}. For the new target, $h_{i,t}\in\mathbb R^{d_t}$ and $H_i=[h_{i,1}\;\cdots\;h_{i,n}]\in\mathbb R^{d_t\times n}$. We use column vectors throughout. A RelaySpec map has shape $W_i\in\mathbb R^{d_r\times d_t}$, so $W_i h_{i,t}$ can enter the original fusion block. The widths $d_t$, $d_r$, and $d_d$ need not be equal.
+where $N:\mathbb R^{d_d}\to\mathbb R^{d_d}$ is the original RMSNorm~\citep{zhang2019rmsnorm}. The sum is equivalent to concatenating the five representations and applying $F$.
 
-\subsection{Verification and useful training positions}
-\label{sec:speculative-decoding}
-Let $x_{1:t}$ be an accepted prefix. The drafter proposes $\gamma$ tokens $y_{1:\gamma}$ and the target scores them in parallel under $x_{1:t},y_{<j}$. With draft distribution $q$ and target distribution $p$ over a shared vocabulary, speculative sampling accepts $y_j$ with probability
+DFlash supplies the fused context as key and value entries to every transformer layer of the drafter model~\citep{chen2026dflash,vaswani2017attention}. The anchor and masked positions provide the queries. Only target representations before the anchor are visible, so the drafter cannot access the tokens it is predicting.
+
+RelaySpec adapts this interface. For $n$ tokens, the new target supplies $H_i=[h_{i,1}\;\cdots\;h_{i,n}]\in\mathbb R^{d_t\times n}$ from layer $i$, where each $h_{i,t}\in\mathbb R^{d_t}$. RelaySpec learns $W_i\in\mathbb R^{d_r\times d_t}$. It maps one vector to $W_i h_{i,t}\in\mathbb R^{d_r}$ and the full sequence to $W_iH_i\in\mathbb R^{d_r\times n}$. The adapted context for one token is
 \begin{equation}
- a_j=\min\!\left(1,\frac{p(y_j\mid x_{1:t},y_{<j})}{q(y_j\mid x_{1:t},y_{<j})}\right).
- \label{eq:spec-accept}
+ \hat c_t=N\!\left(\sum_{i=1}^{5}F_iW_i h_{i,t}\right)\in\mathbb R^{d_d}.
+ \label{eq:relayspec-fusion}
 \end{equation}
-At rejection, a correction is sampled from the normalized positive part of $p-q$. If all proposals are accepted, the target provides a further token. Using the actual proposal probabilities preserves the target distribution in exact arithmetic~\citep{leviathan2023speculative,chen2023sampling}. Our experiments use greedy decoding: retain the longest prefix matching the target's greedy choices, then use the target's correction.
-
-Only a consecutive prefix contributes accepted draft tokens. If $L\in\{0,\ldots,\gamma\}$ is its length, then $\mathbb E[L]=\sum_{j=1}^{\gamma}\Pr(L\geq j)$. This motivates supervising the first incorrect proposal as well as the correct prefix. AUF applies that rule to comparisons against saved target tokens~\citep{yang2026specauf}. Its training-time correct prefix is a prediction diagnostic, not a direct measurement of live decoding speed.
+The maps can be folded into $G=[F_1W_1\;\cdots\;F_5W_5]\in\mathbb R^{d_d\times 5d_t}$. The fusion projection, RMSNorm, drafter transformer, token embedding, and vocabulary head remain frozen. If the new target uses a different tokenizer, a separate vocabulary conversion is required.
