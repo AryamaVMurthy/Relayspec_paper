@@ -1,0 +1,105 @@
+We analyze how the learned maps change the hidden-state context passed to the frozen drafter.
+
+\subsection{What changes when the interface already works?}
+\label{sec:analysis-lora}
+
+For a LoRA-fine-tuned target, identity maps recover the native DFlash interface. Write $z_0=\sum_i F_i h_i$ for this context and $\delta=\sum_i F_i(W_i-I)h_i$ for the learned correction. We run decoding with $z_0$ plus either the component of $\delta$ parallel to $z_0$ or the component perpendicular to it.
+
+\begin{table}[ht!]
+\centering
+\caption{LoRA-target direction and geometry controls. Acceptance length $\tau$ is measured in tokens per verification step. Bold marks the best acceptance length for each task, and underline marks the second best. The geometry measurements use 1,024 positions per task and are dimensionless.}
+\label{tab:key-interventions}
+\begin{minipage}[t]{0.43\linewidth}
+\vspace{0pt}
+\centering
+\scriptsize
+\textbf{Direction intervention}\par\smallskip
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Context & GSM8K $\tau$ & NanoCoder $\tau$ \\
+\midrule
+Native $z_0$ & 4.472 & 5.111 \\
+Full $z_0+\delta$ & \textbf{5.988} & \textbf{5.552} \\
+Parallel only & 4.466 & 5.114 \\
+Perpendicular only & \underline{5.924} & \underline{5.527} \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.54\linewidth}
+\vspace{0pt}
+\centering
+\scriptsize
+\textbf{LoRA-shift geometry}\par\smallskip
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Task & \shortstack{Correction\\cosine} & \shortstack{Shuffled\\cosine} & \shortstack{Radial\\energy} & \shortstack{RMSNorm\\error} \\
+\midrule
+GSM8K & $-0.0429$ & $-0.0413$ & 25.22\% & 17.55\% \\
+NanoCoder & 0.1248 & 0.1052 & 34.82\% & 14.88\% \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\end{table}
+
+The parallel component returns acceptance length to the native level, while the perpendicular component recovers nearly all of the full map's acceptance length (Table~\ref{tab:key-interventions}). Scaling the whole context by two leaves acceptance length unchanged at 5.988 tokens per verification step on GSM8K and 5.552 on NanoCoder. The useful change is mainly directional, consistent with RMSNorm suppressing common rescaling. Appendix~\ref{app:lora-direction} reports every result.
+
+Do the maps reverse the change caused by LoRA fine-tuning? We run the base and LoRA-fine-tuned targets on the same 1,024 saved token positions. At each position, we compare the map correction with the change in fused context caused by LoRA. Exact cancellation would require the correction to point in the opposite direction. We also shuffle the LoRA changes across positions while leaving the corrections fixed. This tests whether each correction is specifically aligned with the change at the same token. The mean correction cosine is $-0.0429$ on GSM8K and $0.1248$ on NanoCoder, close to the shuffled values of $-0.0413$ and $0.1052$ (Table~\ref{tab:key-interventions}). The maps therefore do not systematically reverse the LoRA-induced change token by token. These results support redirection of an already usable context, not literal recovery of the pre-LoRA context. Appendix~\ref{app:lora-geometry} defines each measurement and gives the full procedure.
+
+Identity-preserving SVD retains most of the benefit at moderate rank. Rank 128 on GSM8K keeps an acceptance length of 5.928 tokens per verification step, compared with 5.988 for the full correction, and retains 95.1--99.6\% of its latency reduction in two repeats. Rank 256 on NanoCoder keeps 5.521 of 5.552 tokens per verification step and retains 57.8--89.3\% of the latency reduction. Truncating the entire map to rank 1 or 2 instead removes the identity path and collapses drafting performance. Appendix Tables~\ref{tab:app-rank-first} and~\ref{tab:app-rank-repeats} report all ranks and timing repeats.
+
+\FloatBarrier
+\subsection{Why does reconstruction help across model sizes?}
+\label{sec:analysis-transfer}
+
+We study a Qwen3-8B target with a pretrained Qwen3-4B drafter. The target supplies five feature vectors with 4,096 coordinates. Five learned $2560\times4096$ maps convert them to the width expected by the drafter. Its fusion projection, normalization, and transformer remain frozen. MSE reconstructs the corresponding Qwen3-4B features, while AUF and decay CE train through token predictions. All three start from the same Xavier initialization. We ask whether reconstruction recovers the interface used by the frozen drafter.
+
+\noindent\textbf{Does MSE recover the Qwen3-4B interface? Yes, on the measured training positions.}
+Context error measures the normalized squared difference from the Qwen3-4B context after fusion and RMSNorm. Source cosine measures direction agreement for each feature stream. MSE has lower error and higher cosine than AUF or decay CE (Table~\ref{tab:transfer-probe-summary}). Since MSE directly optimizes reconstruction, we next test prediction. Appendix Tables~\ref{tab:app-context-geometry} and~\ref{tab:app-layer-geometry} report every stream.
+
+\noindent\textbf{Does this help the frozen drafter predict? Yes, most clearly on Code and Chat.}
+At each held-out position, the frozen drafter receives the same preceding tokens and target features, then predicts the same saved continuation. Only the maps differ. Cross-entropy measures the probability assigned to the correct tokens. Correct prefix counts consecutive correct predictions before the first error. MSE gives the lowest cross-entropy and longest correct prefix on MATH, Code, and Chat. GSM8K is mixed, with decay CE giving the lowest cross-entropy and AUF the longest correct prefix. The Code and Chat results show that recovery improves prediction, not only reconstruction. Appendix Tables~\ref{tab:app-heldout-math}--\ref{tab:app-heldout-chat} report the results for every map.
+
+\begin{table}[ht!]
+\centering
+\caption{Interface recovery on 4,096 response positions from 64 NuminaMath-derived training examples. Source cosine is reported as the minimum--maximum across the five feature streams. Error and cosine are dimensionless.}
+\label{tab:transfer-probe-summary}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Recipe & Peak LR & Error $\downarrow$ & \shortstack{Source cosine\\min--max $\uparrow$} \\
+\midrule
+MSE & $10^{-3}$ & 0.136 & 0.944--0.985 \\
+AUF & $10^{-4}$ & 0.940 & 0.121--0.267 \\
+Decay CE & $10^{-4}$ & 0.900 & 0.127--0.279 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textbf{Does moving toward the MSE maps improve live decoding?}
+Averaging each token-trained map with its MSE counterpart improves live throughput and acceptance length without retraining on both MATH and Code. All five maps change, so the test cannot identify one responsible stream. Appendix Table~\ref{tab:app-midpoint} reports every endpoint.
+
+\noindent\textbf{Does initialization explain the difference?}
+To test whether Xavier initialization explains MSE's advantage, we retrain from a rectangular identity, which copies the coordinates that fit the narrower interface and sets the rest to zero. All other MSE settings stay fixed, so its comparison isolates initialization. MSE acceptance length is nearly unchanged on MATH and GSM8K and slightly lower on Code and Chat, while its throughput falls on all four workloads (Table~\ref{tab:optimization-controls}). AUF and decay CE improve both measurements on every workload but remain below MSE in acceptance length. Appendix Tables~\ref{tab:app-identity-endpoints} and~\ref{tab:app-identity-change} report all endpoints.
+
+\begin{table}[ht!]
+\centering
+\caption{Initialization results on 128 prompts per task. Each cell shows Xavier $\rightarrow$ rectangular-identity initialization. Throughput is measured in tokens/s, and acceptance length $\tau$ is measured in tokens per verification step. For each dataset and metric, bold marks the best of all six values, and underline marks the second best.}
+\label{tab:optimization-controls}
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{@{}clcccc@{}}
+\toprule
+Metric & Recipe & MATH & GSM8K & Code & Chat \\
+\midrule
+\multirow{3}{*}{\shortstack{Throughput\\(tokens/s)}} & MSE & \textbf{218.75} $\rightarrow$ \underline{213.70} & \underline{172.35} $\rightarrow$ 166.70 & \textbf{125.98} $\rightarrow$ \underline{119.49} & \textbf{78.31} $\rightarrow$ \underline{76.13} \\
+& AUF & 194.22 $\rightarrow$ 206.16 & 162.05 $\rightarrow$ \textbf{175.35} & 58.37 $\rightarrow$ 73.10 & 49.93 $\rightarrow$ 60.77 \\
+& Decay CE & 194.69 $\rightarrow$ 203.74 & 163.47 $\rightarrow$ 169.72 & 61.56 $\rightarrow$ 76.02 & 51.31 $\rightarrow$ 61.11 \\
+\midrule
+\multirow{3}{*}{\shortstack{Acceptance\\length $\tau$\\[-2pt](tokens/step)}} & MSE & \underline{7.973} $\rightarrow$ \textbf{7.983} & \underline{6.204} $\rightarrow$ \textbf{6.217} & \textbf{4.690} $\rightarrow$ \underline{4.569} & \textbf{2.802} $\rightarrow$ \underline{2.747} \\
+& AUF & 6.892 $\rightarrow$ 7.326 & 5.677 $\rightarrow$ 6.166 & 2.346 $\rightarrow$ 2.931 & 1.767 $\rightarrow$ 2.163 \\
+& Decay CE & 6.947 $\rightarrow$ 7.348 & 5.693 $\rightarrow$ 6.073 & 2.449 $\rightarrow$ 3.042 & 1.812 $\rightarrow$ 2.183 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,24 @@
+\subsection{DFlash block drafting}
+\label{sec:dflash-background}
+
+The \emph{original target} is the model used to train the available drafter, which we call the original target's \emph{native drafter}. The \emph{new target} is the model we want to accelerate.
+
+DFlash predicts several future tokens in parallel~\citep{chen2026dflash}. At each decoding step, it forms a block with the last token committed by the target, called the \emph{anchor}, followed by masked proposal positions. The released Qwen3-4B DFlash checkpoint has a default block size of 16, so each block contains one anchor and 15 proposals. We keep this setting. The DFlash reference generator also defaults to temperature zero, so we use greedy decoding. One drafter pass predicts all 15 proposals, and the target checks them in parallel. With greedy verification, speculative decoding is theoretically guaranteed to produce the same token sequence as greedy target-only decoding~\citep{leviathan2023speculative,chen2023sampling}.
+
+\subsection{The target-feature interface}
+
+DFlash also conditions the drafter on hidden-state representations from five fixed target layers. We use $d_t$ for the new target's hidden-state width, $d_r$ for the original target's hidden-state width expected by the reused fusion projection, and $d_d$ for the drafter transformer's hidden width. Let $h^{(o)}_{i,t}\in\mathbb R^{d_r}$ be the original target's representation at token $t$ from layer $i$. The original fusion projection has five blocks $F_i\in\mathbb R^{d_d\times d_r}$. Their horizontal concatenation is $F=[F_1\;\cdots\;F_5]\in\mathbb R^{d_d\times 5d_r}$. For one token, DFlash computes
+\begin{equation}
+ c^{(o)}_t=N\!\left(\sum_{i=1}^{5}F_i h^{(o)}_{i,t}\right)\in\mathbb R^{d_d},
+ \label{eq:native-fusion}
+\end{equation}
+where $N:\mathbb R^{d_d}\to\mathbb R^{d_d}$ is the original RMSNorm~\citep{zhang2019rmsnorm}. The sum is equivalent to concatenating the five representations and applying $F$.
+
+DFlash supplies the fused context as key and value entries to every transformer layer of the drafter model~\citep{chen2026dflash}. The anchor and masked positions provide the queries. Only target representations before the anchor are visible, so the drafter cannot access the tokens it is predicting.
+
+RelaySpec adapts this interface. For $n$ tokens, the new target supplies $H_i=[h_{i,1}\;\cdots\;h_{i,n}]\in\mathbb R^{d_t\times n}$ from layer $i$, where each $h_{i,t}\in\mathbb R^{d_t}$. RelaySpec learns $W_i\in\mathbb R^{d_r\times d_t}$. It maps one vector to $W_i h_{i,t}\in\mathbb R^{d_r}$ and the full sequence to $W_iH_i\in\mathbb R^{d_r\times n}$. The adapted context for one token is
+\begin{equation}
+ \hat c_t=N\!\left(\sum_{i=1}^{5}F_iW_i h_{i,t}\right)\in\mathbb R^{d_d}.
+ \label{eq:relayspec-fusion}
+\end{equation}
+The maps can be folded into $G=[F_1W_1\;\cdots\;F_5W_5]\in\mathbb R^{d_d\times 5d_t}$. The fusion projection, RMSNorm, drafter transformer, token embedding, and vocabulary head remain frozen. If the new target uses a different tokenizer, a separate vocabulary conversion is required.

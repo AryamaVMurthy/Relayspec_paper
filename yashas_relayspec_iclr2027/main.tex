@@ -1,0 +1,75 @@
+\documentclass[letterpaper]{article}
+\usepackage{iclr2027_conference,times}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx,booktabs,multirow}
+\usepackage{placeins}
+\usepackage{hyperref}
+\usepackage{url}
+
+% Keep top and bottom floats close to the surrounding text.
+\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}
+
+% Keep the official style unchanged. Review mode is the default.
+% Do not enable \iclrfinalcopy for the initial submission.
+\title{RelaySpec: Adapting Frozen Speculative Drafters with Linear Maps}
+\author{}
+\hypersetup{pdfauthor={},pdftitle={}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{sections/abstract}
+\end{abstract}
+
+% Initial main text: at most 9 pages, including figures and tables.
+% The section arrangement below is our outline, not a venue requirement.
+\section{Introduction}
+\label{sec:introduction}
+\input{sections/introduction}
+
+
+\section{Preliminaries}
+\label{sec:preliminaries}
+\label{sec:background}
+\input{sections/background}
+
+\section{Related Work}
+\label{sec:related-work}
+\input{sections/related_work}
+
+\section{Method}
+\label{sec:method}
+\input{sections/method}
+
+\section{Experiments}
+\label{sec:experiments}
+\input{sections/experiments}
+
+\section{Analysis}
+\label{sec:analysis}
+\input{sections/analysis}
+
+\section{Conclusion}
+\label{sec:conclusion}
+\input{sections/conclusion}
+
+% Statements below are outside the main-text page limit.
+% AI disclosure is required. Ethics and reproducibility are recommended.
+\subsection*{AI Use Statement}
+\input{sections/ai_use}
+
+\subsection*{Ethics Statement}
+\input{sections/ethics}
+
+\subsection*{Reproducibility Statement}
+\input{sections/reproducibility}
+
+\bibliography{references}
+\bibliographystyle{iclr2027_conference}
+
+% Appendices follow the references. Add headings when content is written.
+\appendix
+\input{sections/appendix}
+
+\end{document}
