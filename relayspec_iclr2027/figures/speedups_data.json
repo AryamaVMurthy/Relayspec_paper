@@ -1,0 +1,48 @@
+{
+  "lora": [
+    {
+      "domain": "GSM8K",
+      "dataset": "GSM8K",
+      "relayspec": 1.3951,
+      "mean_tps": 179.83
+    },
+    {
+      "domain": "KiCad",
+      "dataset": "KiCad",
+      "relayspec": 1.8547,
+      "mean_tps": 312.47
+    }
+  ],
+  "cross_size": [
+    {
+      "domain": "math",
+      "dataset": "MATH",
+      "native": 5.8087,
+      "relayspec": 5.8212
+    },
+    {
+      "domain": "gsm8k",
+      "dataset": "GSM8K",
+      "native": 4.7121,
+      "relayspec": 4.6838
+    },
+    {
+      "domain": "code",
+      "dataset": "Code",
+      "native": 4.0437,
+      "relayspec": 3.4032
+    },
+    {
+      "domain": "chat",
+      "dataset": "Chat",
+      "native": 2.5508,
+      "relayspec": 2.3066
+    }
+  ],
+  "metric": "ratios of arithmetic mean per-request tokens/second",
+  "domain_naming": "`domain` is the raw report string. In new_phase2.md `Math` is the MATH dataset and `GSM8K` is GSM8K. Use `dataset` for labels and tables.",
+  "sources": [
+    "new_phase1.md: 5W AUF versus DFlash native, 16 September 2026 snapshot",
+    "new_phase2.md: 5W MSE25 and DFlash native versus autoregressive, 16 September 2026 snapshot"
+  ]
+}

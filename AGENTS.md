@@ -58,10 +58,34 @@ Examples:
 
 These examples illustrate style. They do not establish procedures or findings for RelaySpec.
 
+## Complete sentences and connected explanations
+
+Use RepSpec, PARD, and DFlash as references for how to develop an explanation, not as sources of sentences to copy. The relevant patterns are:
+
+- RepSpec Section 3.1 first explains the operation in words, introduces the components and notation, gives the equations, and then explains how training-time operations are combined for inference.
+- PARD Sections 3 and 3.1 state what the method will do before introducing its prediction objective and inference procedure.
+- DFlash Section 4.1 connects a design choice to the limitation it addresses, explains how it works, and points to evidence for its effect.
+
+Apply these patterns with RelaySpec's own evidence and the following rules:
+
+- Write complete sentences with a clear subject and verb. Do not compress prose into fragments, labels, or a list of implementation facts.
+- Begin each paragraph by identifying the operation, question, or setting being discussed. Do not start with an unexplained symbol, loss name, initialization choice, or result.
+- Connect each sentence to the preceding explanation. State the reason, consequence, or next step when the relationship would otherwise be unclear. Use transitions only when they express a real relationship.
+- Introduce what a component does and why it is needed before giving its name, dimensions, or formula. Do not make readers infer its purpose from notation alone.
+- Lead into an equation with a sentence explaining what it computes. Define every new symbol before or immediately after the equation, and explain the result when its role is not already clear.
+- Name the object being changed or measured. Avoid vague openings such as "This improves performance" when the reader cannot tell what "this" or "performance" refers to.
+- Distinguish the motivation for a design from evidence that it works. A smooth explanation must not turn an intuition into an established finding.
+- Use connected sentences to describe a sequence of operations. Do not jump from initialization to export, or from training to evaluation, without explaining the change of stage.
+- Keep sentences reasonably short, but retain the words needed to explain their meaning. Combine closely related short sentences when separating them makes the paragraph choppy.
+- Compress by removing repeated claims, unnecessary background, and duplicate definitions. Do not remove subjects, logical connections, assumptions, or explanations merely to save lines.
+- Read each paragraph as continuous prose before finishing. A reader should understand what is being done and why without reconstructing the argument from isolated statements.
+
+For example, prefer "Before inference, we multiply each learned map into its fusion block. The drafter can then use the combined projection without a separate mapping operation." over "Maps folded into fusion. No mapping overhead." This illustrates sentence construction, not permission to add an unsupported efficiency claim.
+
 ## Citations and cross-references
 
 Use citations and cross-references wherever needed to support claims and help readers find relevant material. Refer to the appendix, sections, figures, tables, and equations when appropriate, including from the main paper. Make each reference accurate and specific. Cite prior work where its ideas, methods, or findings are used.
 
 ## Check before finishing a section
 
-Confirm that the text explains the actual procedure, comparison, or measurement. Remove repeated points and unnecessary jargon. Check that simpler wording preserves the technical meaning, evidence, assumptions, and limitations. Check that prose contains no em dashes or semicolons.
+Confirm that the text explains the actual procedure, comparison, or measurement. Remove repeated points and unnecessary jargon. Check that simpler wording preserves the technical meaning, evidence, assumptions, and limitations. Check that prose contains no em dashes or semicolons. Check that paragraph openings establish context, sentences connect logically, and compression has not made the explanation abrupt or incomplete.

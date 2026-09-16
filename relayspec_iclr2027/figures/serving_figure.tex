@@ -1,0 +1,6 @@
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{figures/relayspec_serving.pdf}
+    \caption{One Qwen3-4B target backbone and one draft backbone serving three LoRA targets under vLLM on a single L40S, 384 requests with frozen route assignments. (a) aggregate throughput, total returned tokens divided by workload wall time including drain. (b) mean per-request throughput. The adapted drafter leads on server throughput at every concurrency, while per-request throughput falls with load for all three methods.}
+    \label{fig:serving}
+\end{figure}

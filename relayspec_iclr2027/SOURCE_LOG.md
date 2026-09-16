@@ -77,3 +77,256 @@ Consulted both report PDFs through `tmp/pdfs/phase1.txt` and `tmp/pdfs/phase2 (1
 - Added `ramakrishnan2025omnidraft`: https://proceedings.neurips.cc/paper_files/paper/2025/file/3c2fe1417eed1c6ff9acf169617981ea-Paper-Conference.pdf , NeurIPS 2025. Cross-vocabulary cache and online adaptation.
 
 Root AGENTS.md now requires checking the supplied report PDFs and Markdown evidence when drafting technical claims, and following the reference papers' structure with original, simple-English prose.
+
+
+## Method draft and main results figure
+
+- Figure 1 reads the selected `maps_full` AUF rows (4,096 examples, 32 anchors) in `phase1_results.md` and the completed T1 standalone AR-baseline table in `phase2_results.md`. Both panels use ratios of arithmetic mean per-request token rates. The LoRA baseline is unchanged DFlash with the adapted target. The transfer baseline is autoregressive Qwen3-8B. Native 8B drafter results and weaker Code/Chat transfer are displayed. No repeated-run uncertainty is available in these aggregate rows. Plotted values and provenance are saved in `figures/speedups_data.json`.
+- Method equations and data preparation were checked against both report PDFs and all four Markdown reports. AUF uses a detached exclusive prefix mask, including the first failure, with local microbatch normalization. MSE averages five relative feature errors and adds normalized fused-context error, with epsilon 1e-6. Positions are averaged within each example before the example mean.
+- Initialization, frozen components, 15 proposal positions, causal feature access, block attention, Xavier-uniform cross-model initialization, and BF16 folding follow the selected report recipes. Distinguish the selected MSE recipe from the cold token-loss and warm-start probe recipes.
+- The architecture diagram is Figure 2 in Method. The title page uses normal template dimensions, with top floats deferred so Figure 1 can appear on page 2. No margin or style-file edits were made.
+
+## Method presentation order
+
+Following the organization of RepSpec Section 3.1, Method now explains the procedure, defines the map and fusion dimensions, and derives the folded computation before presenting the architecture figure. AUF and MSE training details follow. Parameterization was rechecked against Phase 1 and Phase 2 reports and their Markdown evidence. This is a presentation change, not a new experimental claim.
+
+## Method compression and layout
+
+Removed repeated Method explanations and shortened the architecture caption while retaining the equations, dimensions, frozen components, initialization, loss normalization, and numerical qualifications. Replaced forced figure placement with a normal float after the architecture explanation. This avoids stretching the preceding page to accommodate an unbreakable figure. Method source word count decreased from 726 to 566 by whitespace token count, including LaTeX. The rebuilt draft is eight pages including references. Official margins, fonts, and style files are unchanged.
+
+## Method rewrite for standalone readability
+
+Rewrote Method as connected explanations of the five maps, combining their weights with fusion before inference, AUF training for a LoRA-adapted target, and MSE reconstruction for a different target. Rechecked both report PDFs and all four Markdown reports. Removed deployment qualifications and numerical-export details from the core explanation. Moved initialization into the relevant training subsection and retained the correction definition inline. Preserved the AUF first-failure rule and local normalization, and the MSE relative-error terms and per-example averaging.
+
+## Inherited architecture choices and evaluation scope
+
+DFlash Section 5.5.3 and Table 7 discuss five target features, distinct from the number of draft transformer layers. Its block-size experiments and Appendix A.5.2 document 16-token training blocks. RelaySpec retains one map per inherited feature input and one known token plus 15 masked positions for its main Qwen setup. Phase 2 Appendix A explicitly records the Llama checkpoint exception: pretrained block size 10, evaluated at 16. Phase 2 Appendix D explicitly identifies EAGLE-3 as an external native checkpoint, not a transferred EAGLE mapper. The manuscript therefore includes EAGLE as a baseline without claiming demonstrated RelaySpec adaptation to EAGLE. Model and workload coverage follows both reports and their results tables.
+
+## Current Method and provisional experiment values
+
+The newly supplied `RelaySpec_MSE_Paper-single-layer-old-paper.pdf` documents actual RelaySpec-adapted EAGLE-3 experiments. This corrects the earlier source inventory, which only had native EAGLE baselines in the Phase reports. Its Sections 4, 5.2, 5.3 and Appendix A describe a single learned projection over concatenated features, not one target layer. EAGLE MATH-500 throughput is 84.92/59.18 tokens per second for 8B/14B, retaining 90.2/89.1 percent of native throughput. Its Table 44 reports dense/factored/MLP throughput 198.09/196.25/190.15 on 128 MATH development questions, with 2,048 fitting records and 8,192 updates.
+
+At the user's request, the manuscript describes the current per-input-map design only. These earlier numerical values are retained solely as starred draft placeholders in Experiments, with an explicit source/configuration note. They must not be interpreted as current five-map or new per-input EAGLE measurements. The pending studies replace these cells, and no current linear-over-MLP conclusion is asserted. Older-method exposition and its appendix were removed. Provenance remains here for replacement and audit.
+
+Method now includes the block-matrix identity establishing equivalence of separate maps and combined projection in exact arithmetic, the identity-initialization argument, and the conditional induction argument for greedy verification. None proves speedup or linear superiority. The proposed EAGLE extension uses three input maps and its existing autoregressive proposal procedure. The currently running EAGLE implementation and exact training support must be checked against its eventual experiment records.
+
+## Citation audit for named techniques
+
+Added original-source citations at the relevant Method statements for Xavier-uniform initialization (Glorot and Bengio, AISTATS 2010), GELU (Hendrycks and Gimpel, 2016 preprint), LoRA (Hu et al., ICLR 2022), and RMSNorm (Zhang and Sennrich, NeurIPS 2019). Existing citations cover DFlash's features and block construction, EAGLE-3's features, the borrowed AUF objective, and speculative verification. Block-matrix multiplication and identity initialization are derived directly, not attributed to an unrelated work. RelaySpec's particular relative-MSE objective remains grounded in the experimental reports.
+
+Primary sources verified in this audit:
+- Xavier: https://proceedings.mlr.press/v9/glorot10a.html
+- GELU: https://arxiv.org/abs/1606.08415
+- LoRA: https://arxiv.org/abs/2106.09685
+- RMSNorm: https://arxiv.org/abs/1910.07467
+- Qwen3: https://arxiv.org/abs/2505.09388
+- GSM8K: https://arxiv.org/abs/2110.14168
+- MATH dataset: https://arxiv.org/abs/2103.03874
+
+Also added model/dataset citations where Qwen3, GSM8K, and MATH appear in prose. These identify external assets, not evidence for RelaySpec's own measured performance. All 26 used bibliography keys resolve, with no duplicate keys or LaTeX warnings.
+
+## Final DFlash Method clarifications
+
+Clarified one map per corresponding feature input, shared over token positions. The frozen embeddings and vocabulary head belong to the original drafter, as documented in Phase 2's architecture description and Phase 1's parameterization. Defined the original fused context explicitly. Paired MSE supervision uses identical saved prompt/response text, not separately generated responses, and selected valid positions include prompt and response positions. The average feature-error term and context-error term have equal weight. Added prompt/verification feature reuse and removal of rejected speculative cache positions, consistent with the recorded generation loop in the earlier manuscript. The EAGLE paragraph was left unchanged pending its new experiment records.
+
+## Report domain names differ between phases
+
+The two phases use the same domain strings for different datasets. In `../phase1_results.md`, section "Complete matched numerical exports", domain `math` denotes GSM8K. In `../phase2_results.md`, domain `math` denotes the MATH dataset and domain `gsm` denotes GSM8K. A row copied from one phase into a table labelled by the other phase's convention would therefore report the wrong dataset.
+
+Always resolve the raw domain string to a dataset name before writing it into the manuscript. Phase 1 uses `math` for GSM8K and `kicad` for KiCad. Phase 2 uses `math` for MATH, `gsm` for GSM8K, `code` for its pinned LiveCodeBench releases and `chat` for its UltraFeedback-derived instructions. The Phase 2 code and chat workloads are not HumanEval or MT-Bench.
+
+`figures/draw_speedups.py` now holds these two mappings explicitly, records both the raw `domain` and the resolved `dataset` for every plotted row in `figures/speedups_data.json`, and labels both panels from the resolved names instead of a separate hardcoded list. Figure 1 panel (a) therefore reads Phase 1 `math` and prints GSM8K, and panel (b) reads Phase 2 `math` and prints MATH. The plotted values and the figure are unchanged by this correction. An unrecognized Phase 2 domain now fails the render instead of being plotted under a wrong label.
+
+## Adaptation cost against published drafter training
+
+The DFlash paper reports its training data and schedule but no training time, no batch size and no hardware budget, and it runs its experiments on H200 GPUs. A GPU-hour ratio against our L40S fits is therefore not derivable from published numbers and would not be comparable across that hardware. Section~5.1 instead compares how much supervision each recipe consumes, and reports measured time only for our own fits. The manuscript states this limitation in the text rather than estimating the missing figure.
+
+DFlash recipe values are taken from its Section 5.1 and Appendix A.1 in `../relayspec_ref/2602.06036v2.pdf`: a mixture of about 800,000 samples, six epochs, 512 anchor positions randomly sampled per sequence at every epoch, five draft layers for Qwen3 and block size 16. The paper's own wording is "around 800K samples", so the derived ratios are stated as approximate.
+
+Derived scale quantities, computed only from the two published recipes:
+
+| Recipe | Unique examples | Sequence passes | Anchor blocks |
+| --- | ---: | ---: | ---: |
+| DFlash drafter training | 800,000 | 800,000 times 6 = 4,800,000 | 4,800,000 times 512 = 2,457,600,000 |
+| RelaySpec AUF maps, LoRA target | 4,096 | 4,096 times 1 = 4,096 | 4,096 times 32 = 131,072 |
+| RelaySpec MSE maps, cross-model | 16,384 | 16,384 times 3 = 49,152 | Not applicable |
+
+The selected LoRA checkpoint makes one pass, not three. Phase 1 studies 31 and 38 both record one epoch over the specified cohort with 512 optimizer updates at 4,096 presentations, and study 33 repeats the same recipe for its reevaluation. Only the cross-model T1 recipe uses three epochs, with 6,144 updates at 16,384 examples. An earlier version of this entry applied three epochs to both settings and understated the LoRA ratios.
+
+Sequence-pass ratios are 1,171.9 for the LoRA setting and 97.66 for the cross-model setting. The LoRA anchor-block ratio is 18,750. Counted as unique examples instead, the ratios are 195.31 and 48.83. The manuscript rounds these to about 1,170, about 18,750, about 98, about 195 and about 49. The abstract and introduction quote the unique-example ratios, which do not depend on the epoch count. Anchor blocks do not apply to the reconstruction objective because it supervises positions directly rather than sampling anchors.
+
+GSM8K holds exactly 4,096 unique cached questions and repeats only beyond that point, so 4,096 presentations are 4,096 unique examples. KiCad has up to 15,366 unique cached examples, so its 4,096-presentation cell is also fully unique.
+
+Measured fitting times are the selected checkpoints' optimizer-loop wall time on two L40S GPUs, from the `ablation` and `scaling` exports in `../phase1_results.md` and the selected T1 recipe table in `../phase2_results.md`. GSM8K is 159.8 seconds and 0.089 GPU-hours, KiCad is 319.3 seconds and 0.177 GPU-hours, and T1 is 24.91 minutes and 0.8303 GPU-hours. Phase 1 fitting ran on node07 L40S. Feature capture for the 16,384 T1 records is 0.9238 GPU-hours from the shared extraction table, which one cache amortizes across several fits.
+
+Two qualifications are stated beside the table and must be retained. The supervision ratio understates the compute difference for the cross-model setting, because DFlash trains draft weights while our reconstruction objective passes no gradient through the draft transformer. The ratio also overstates our generality, because the published recipe yields one drafter that serves its target across workloads while our LoRA maps are fitted per workload and do not transfer, as the bank-swap probe in `../phase1_probe.md` section 8 records. No claim is made that RelaySpec replaces drafter training, and no cost advantage is claimed over the matched draft-body control, which fits in a comparable time.
+
+
+## Figure 1 caption reduction
+
+Shortened the caption to the two panel results, the warning that the panels use different baselines, the fitting time, and a pointer to Section~5. The evaluation settings it previously carried moved to a lead-in paragraph in Experiments: single requests, greedy decoding, Transformers, L40S, 128 held-out prompts per workload, mean per-request token rates, and response caps of 2,048 tokens with 8,192 for KiCad. Those settings are recorded in Phase 1 study 33 under "Models and execution" and in the Phase 2 T1 evaluation contract. The caption states fitting as under six minutes in panel (a), which covers the 159.8-second GSM8K and 319.3-second KiCad checkpoints, with the exact values in Table 1. The caption no longer restates that bars are not shared-serving speedups, because the lead-in paragraph now defines the throughput statistic for the whole section.
+
+## New MLP and EAGLE-3 measurements, 16 September 2026
+
+Sources are `../new_phase1.md` and `../new_phase2.md`, both complete 128-request cohorts regenerated from saved per-request JSON by `scripts/report_extensions_20260916.py`.
+
+### Figure 1 rebased onto the new snapshots
+
+Panel (a) previously used the `ablation` and `scaling` exports in `../phase1_results.md`, which report the selected checkpoints as plus 37.58 percent on GSM8K and plus 89.52 percent on KiCad. The new snapshot re-evaluates the same checkpoints, confirmed identical by their 32,768,000 trainable parameters and their 2.663 and 5.321 minute fits, and reports 1.3951 and 1.8547 times unchanged DFlash. That is plus 39.51 and plus 85.47 percent. The two runs differ only in evaluation, which is the run-to-run timing variation the Phase 1 probes document. The manuscript now uses the new snapshot throughout so that Figure 1, the EAGLE-3 table and the nonlinear-map table share one cohort. Dividing the rounded tokens-per-second columns instead gives 85.46 percent, so the figure and text take the snapshot's own ratio column, which is computed from full-precision data.
+
+Panel (b) already agreed with `../new_phase2.md` and changed only in the fourth decimal of the native MATH ratio, from 5.8088 to 5.8087. `figures/draw_speedups.py` now reads both panels from the two new documents and parses their ratio columns directly instead of re-deriving them. Its table match requires the multiplication sign in the ratio cell, because the token-count tables have the same column count.
+
+### Nonlinear map comparison
+
+The measured alternative is a parallel branch, $g_i(h)=W_i h+B_i\operatorname{SiLU}(A_i h)$, with $A_i$ reducing to 256 coordinates and $B_i$ starting at zero, so training begins at exactly the linear solution. It is **not** parameter matched: it adds parameters, 32.8 to 39.3 million for a LoRA-adapted target and 52.4 to 60.9 million for cross-model transfer. The manuscript says "more parameters" and never "parameter matched". This replaces the earlier proposed dense versus factored versus GELU comparison, which was never run.
+
+Across the seven matched cells the nonlinear arm changes throughput between minus 2.07 and plus 2.97 percent, favoring the linear map in five of seven, with acceptance deltas between minus 0.035 and plus 0.154. Both source documents warn that small throughput differences without acceptance gains are not a robust architectural improvement, so the manuscript claims only that this nonlinear interface does not pay for its extra computation here.
+
+The SiLU activation is defined inline as $x\sigma(x)$ rather than cited, because no primary source for it has been verified in this workspace. Add a citation after verifying one. The GELU entry `hendrycks2016gelu` is now uncited and harmless, retained in case a GELU arm is measured later.
+
+### EAGLE-3 results and the Method correction
+
+The Method EAGLE paragraph previously stated that maps for a LoRA-adapted target start at identity and receive token supervision. `../new_phase1.md` shows the implementation uses normalized layer plus post-RMSNorm context MSE at 100 percent position coverage, with source features from base Qwen3-4B. Method now states reconstruction for both EAGLE settings and notes that this differs from the DFlash LoRA recipe. Initialization follows width: identity for the square 2,560 to 2,560 maps, Xavier for the rectangular 4,096 to 2,560 maps. Trainable parameters are 19,660,800 and 31,457,280. The three taps are HF hidden-state indices 2, 18 and 33. The tap indices and parameter counts are held for Experiments or the appendix rather than Method, to protect the page budget.
+
+Against native EAGLE, cross-model transfer gains 8.05, 6.63, 2.57 and 2.57 percent on MATH, GSM8K, Code and Chat. LoRA targets are mixed: plus 0.99 on GSM8K, plus 6.60 on KiCad, minus 7.87 on NanoCoder. EAGLE acceptance uses upstream emitted-token counters and is not comparable with the DFlash rows, and EAGLE's absolute throughput is far below DFlash's for reasons the documents attribute to different draft bodies and proposal structures, not to the maps.
+
+### Preliminaries and Method generalized to K streams
+
+Because EAGLE-3 now carries measured results, Preliminaries defines $K$ feature streams with $K=5$ for DFlash and $K=3$ for EAGLE-3, and Method's context, folding and reconstruction equations use $K$. The leftover superscript in the original fused-context equation was corrected from $c^{(r)}_t$ to $c^{(o)}_t$, matching the agreed preference for "original target" over "reference model".
+
+### New cost figures
+
+`../new_phase1.md` and `../new_phase2.md` independently confirm the fitting costs already in Table 1: 0.0888 GPU-hours for GSM8K, 0.1774 for KiCad and 0.830 for cross-model. Not yet used in the manuscript: EAGLE fits are much cheaper because no gradient reaches the draft body, at 0.247 to 3.734 minutes in Phase 1 and 13.132 minutes in Phase 2, but EAGLE needs fresh paired capture costing 8.43, 57.88 and 9.00 minutes of wall time for GSM8K, KiCad and NanoCoder. The nonlinear arm costs about the same to fit as the linear one. The cross-model AUF comparator at 8,192 examples cost 1.0548 GPU-hours, more than the selected MSE recipe.
+
+## Experiments section cleared for redrafting, 16 September 2026
+
+At the user's request, `sections/experiments.tex` is empty again. The drafted adaptation-cost, EAGLE-3 and linear-versus-nonlinear subsections were removed pending a decision on the section's structure. The preceding entries retain every number, source and derivation, so those subsections can be rebuilt from this log plus `../new_phase1.md` and `../new_phase2.md`.
+
+Three cross-references into that section were removed so the build stays free of undefined references: the cost pointer in the introduction's second contribution bullet, the nonlinear-map pointer in Method, and the evaluation-settings pointer in the Figure 1 caption. The claims themselves were kept in the abstract, introduction and Method, so they currently have no supporting section in the main text and must be reconnected when Experiments is redrafted. The shared evaluation settings that had moved out of the Figure 1 caption into the Experiments lead-in paragraph are no longer stated anywhere in the manuscript and need a home in the new section.
+
+## Experiments section drafted, 16 September 2026
+
+Section 5 now has nine subsections in the order: setup, fine-tuned targets, replaced targets, where the trained parameters belong, which objective, how much supervision, shared serving, generality, and cost. The order follows DFlash's pattern of main results before design ablations and PARD-2's separation of the two adaptation settings, with each subsection closing in an explicit statement of what it supports.
+
+Claim-to-source map for every table and figure:
+
+| Manuscript object | Source |
+| --- | --- |
+| Table 2, fine-tuned targets, Qwen3-4B rows | `../new_phase1.md` results table, 5W AUF and DFlash native, plus its saved AR comparison |
+| Table 2, Qwen3-8B rows | `../phase1_results.md`, "eight standalone" export, domains math and codealpaca |
+| Table 3, cross-model versus AR | `../phase2_results.md`, completed standalone AR baselines, Mapped/AR column |
+| Table 4, native recovery | same table, mapped mean TPS divided by native mean TPS. T3 is absent because its Llama3.2-3B target has no published native drafter, stated in the caption rather than left blank |
+| Table 5, placement for a fine-tuned target | `../phase1_results.md` `ablation` export, AUF rows, gain versus native |
+| Table 6, placement for T1 | `../phase2_results.md`, "Selected T1 architecture results", 8,192-example three-epoch fits |
+| Table 7, objective comparison | `ablation` export for the upper block, T1 architecture table for the lower block |
+| Figure 3, supervision scaling | `../phase1_results.md` `scaling` export, AUF rows only, parsed by `figures/draw_scaling.py` |
+| Figure 4, shared serving | `../phase1_results.md` `serving` export, trial `peak_clients_trial0`, oracle policy, parsed by `figures/draw_serving.py` |
+| Table 8, nonlinear maps | `../new_phase1.md` and `../new_phase2.md` |
+| Table 9, cost | `../new_phase1.md` and `../new_phase2.md` fitting-cost tables |
+
+Both new figure scripts parse the reports at render time and assert grid completeness, so a change in report shape fails the render instead of plotting stale values. Plotted values and provenance are saved to `figures/scaling_data.json` and `figures/serving_data.json`.
+
+Distinctions preserved in the prose, each of which a reviewer could otherwise challenge:
+
+- The T1 architecture and objective tables use the 8,192-example three-epoch fits, which are not the selected 16,384-example 25 percent recipe used in Figure 1 and Table 3. The selected recipe reaches 1.0022 on Math where the 8k MSE50 fit reaches 0.9986.
+- The direct fusion control has the same 52.4M parameters as the five maps and the same initial function, so its collapse to 0.365 of native under a matched objective is attributed to the parameterization, not to capacity.
+- BA cells are low-rank replacements of each whole map, not low-rank corrections added to it, so their degradation is not evidence about correction rank.
+- The draft-body control uses a different backbone in the T1 setting and wins on NanoCoder in the LoRA setting, so no general claim of input adaptation over body adaptation is made.
+- Reconstruction runs use learning rate 1e-3 and token runs 1e-4, so the objective comparison is between recipes, not losses at one setting.
+- The Qwen3-8B serving sweep shows mapped aggregate throughput below native at 16 and 32 clients. This is reported as a boundary in the same paragraph as the 4B gains.
+- EAGLE runs do not return identical sequences, unlike the DFlash comparisons, and the fine-tuned EAGLE maps are reconstruction-trained rather than token-trained. Both are stated where the numbers appear.
+
+Per-column completeness: no table contains a pending or blank cell. Autoregressive absolute throughput was moved out of Tables 2 and 3 into their captions to keep both within the text width, and the missing T3 native drafter and the missing concurrent AR controls are handled in prose.
+
+Citations still to add before submission: Llama 3, LiveCodeBench, UltraFeedback, NuminaMath and CodeAlpaca are named without citations, matching the existing treatment of KiCad and NanoCoder. A primary source for SiLU is also still needed.
+
+## EAGLE-3 token supervision replaces reconstruction for fine-tuned targets, 16 September 2026
+
+Source is `../eagle_auf_results.md`, a completed run covering three fits and all 384 evaluation requests. This supersedes the fine-tuned EAGLE-3 rows previously taken from `../new_phase1.md`, which trained those maps by reconstruction toward base Qwen3-4B features.
+
+The earlier gap is now closed. The Method EAGLE-3 subsection had been corrected to say reconstruction for both settings, because that was what had been run. It now states token supervision for a fine-tuned target and reconstruction for a replaced one, matching both the implementation and the DFlash pairing.
+
+Measured against the unadapted EAGLE-3 drafter on the same adapted target and prompts:
+
+| Workload | Unadapted | Token-supervised maps | Ratio | Acceptance | vs AR |
+| --- | ---: | ---: | ---: | --- | ---: |
+| GSM8K | 71.19 | 120.35 | 1.6906 | 3.3466 to 5.6951 | 3.8217 |
+| NanoCoder | 81.77 | 119.30 | 1.4588 | 3.8519 to 5.6677 | 3.7517 |
+| KiCad | 73.82 | 151.86 | 2.0570 | 3.7944 to 7.3632 | 4.9997 |
+
+The same three maps trained by reconstruction reach 71.89, 75.34 and 78.70 tokens per second, so token supervision is 67.41, 58.35 and 92.96 percent faster. The manuscript presents this as an independent replication of the objective-to-setting pairing on a second drafter family, and notes that the reconstruction variant falls below the unadapted drafter on NanoCoder. The report itself warns that the two arms differ in objective and supervision workload and are not a controlled change of one loss term, which the manuscript states.
+
+Architecture and recipe now recorded in Method: three square maps $W_i\in\mathbb R^{2560\times2560}$ at identity, 19,660,800 trainable parameters, taps at zero-based indices 2, 18 and 33, folded export $[F_1W_1\;F_2W_2\;F_3W_3]$. The objective is a recurrent adaptation of accept-until-fail, not DFlash's masked-block implementation: up to eight successive predictions per anchor, a detached prefix-correctness weight that includes the first wrong token, a saved token continuing a path only where it matches the greedy prediction, an in-head vocabulary mask so an out-of-head target token ends a path without contributing a loss term, and per-example normalization by that example's supervised-position count. Method states each of these. One epoch, 512 updates, 4,096 examples per LoRA, up to 32 anchors, AdamW at 1e-4, seed 42, two L40S.
+
+Fitting cost in Table 9 updated from the reconstruction figures to 2.73 minutes and 0.091 GPU-hours for GSM8K and 19.16 minutes and 0.639 GPU-hours for KiCad. The cost paragraph no longer claims EAGLE-3 fits are cheapest because reconstruction skips the draft body, since the fine-tuned EAGLE-3 fits now backpropagate through the frozen drafter. It instead attributes the per-example saving to the reconstruction objective and notes that these token-supervised fits reused an existing feature cache and needed no new extraction.
+
+These runs are single timing passes with no repeated-run intervals, and their returned-token counts differ from the controls, so throughput and acceptance are reported rather than summed latency.
+
+## Citations added for named assets
+
+Added and cited: Llama 3 (`dubey2024llama3`), LiveCodeBench (`jain2024livecodebench`), UltraFeedback (`cui2023ultrafeedback`), NuminaMath (`li2024numinamath`), CodeAlpaca (`chaudhary2023codealpaca`) and SiLU (`elfwing2018silu`). The unused GELU entry was removed because the measured nonlinear arm uses SiLU. All 31 remaining entries are cited and resolve with no LaTeX warnings.
+
+These six entries were written from model knowledge rather than fetched, because this session had no verified network retrieval for them. Their titles, authors, years and identifiers must be checked against the primary records before submission, in the same way the earlier entries in this log were verified. KiCad and NanoCoder remain internal domain names with no external citation.
+
+## Citation verification, 16 September 2026
+
+The six entries added from model knowledge were checked against primary records. Three were correct, two were wrong and one had minor errors. All are now corrected and the flag on them is lifted.
+
+| Key | Status | Correction |
+| --- | --- | --- |
+| `grattafiori2024llama3` | Was wrong | The arXiv v3 author list is led by Aaron Grattafiori, not Abhimanyu Dubey. Entry and key renamed, and the citation in Experiments updated. Verified at https://arxiv.org/abs/2407.21783 |
+| `cui2024ultrafeedback` | Was wrong | The subtitle is "Boosting Language Models with Scaled AI Feedback", not "with High-quality Feedback". Three authors were missing, Bingxiang He, Ruobing Xie and Yankai Lin, and the order was wrong. The venue is ICML 2024, so the entry is now an inproceedings and the key year changed from 2023. Verified at https://arxiv.org/abs/2310.01377 |
+| `li2024numinamath` | Minor errors | Aligned to the dataset's own BibTeX: "Shengyi Costa Huang" rather than "Shengyi Huang", publisher Numina, and the canonical URL https://huggingface.co/AI-MO/NuminaMath-CoT |
+| `jain2024livecodebench` | Correct | Title, all ten authors in order, year and arXiv id confirmed at https://arxiv.org/abs/2403.07974 |
+| `chaudhary2023codealpaca` | Correct | Matches the repository's own citation block at https://github.com/sahil280114/codealpaca |
+| `elfwing2018silu` | Correct | Neural Networks volume 107, pages 3--11, 2018, confirmed. The arXiv preprint is 1702.03118 from 2017 |
+
+The final build resolves all 31 bibliography entries with no undefined citations and no BibTeX warnings.
+
+Unit convention: fitting time is now reported in minutes everywhere. The introduction previously said 159.8 seconds where Table 9 said 2.66 minutes. The introduction now says 2.66 minutes, matching the table exactly.
+
+## Experiments rewritten in the reference-paper structure, 16 September 2026
+
+Section 5 now follows the organization used by PARD-2 Section 4 and RepSpec Section 4: setup, main results, ablation studies, then generalization, serving and overhead. Setup uses their bold lead-ins (Models, Datasets and benchmarks, Metrics, Baselines, Implementation details), main results lead with two large speedup-and-acceptance tables, and every ablation closes with an explicit statement of what it shows.
+
+The internal transfer labels T1 to T4 were removed from the manuscript. Transfers are now named by the target they accelerate and the model their drafter came from: Qwen3-8B from Qwen3-4B, Qwen3-4B from Qwen3-8B, Llama3.2-3B from Llama3.1-8B, and Llama3.1-8B from Qwen3-4B. The labels remain only in this log and in the reports.
+
+Main tables now carry both speedup over autoregressive decoding and average acceptance length for every cell, following PARD-2 Table 1. The best entry in each row or pair is bold in every table. In the cross-model table that means the native drafter is bold on most cells, which is the honest reading: RelaySpec's claim there is recovery without target-specific drafter training, not superiority. Llama3.2-3B appears as a RelaySpec-only row because it has no published native drafter, which removes a row rather than leaving cells blank.
+
+### Harmonic mean as the selection criterion
+
+Harmonic mean is used only where an ablation must choose one configuration, namely the placement ablation and the objective ablation. It is not reported in the main results, the capacity ablation, the EAGLE-3 table or the cost table. Values are computed on speedup ratios.
+
+| Selection | Candidates and harmonic means | Chosen |
+| --- | --- | --- |
+| Objective, fine-tuned target | Accept-until-fail 1.3762, decaying cross-entropy 1.3530 | Accept-until-fail |
+| Objective, replaced target | MSE100 0.9214, MSE50 0.9186, decaying cross-entropy 0.6226, accept-until-fail 0.6042 | Reconstruction |
+| Placement, fine-tuned target | Five maps 1.376, draft body 1.355, direct fusion 1.265, joint map 1.244, rank 128 0.999, rank 56 0.751, rank 28 0.565 | Five per-stream maps |
+
+The fine-tuned objective case is the one that justifies the criterion in the manuscript. On the arithmetic mean the two token objectives are nearly tied, 1.4505 against 1.4449, because decaying cross-entropy's strong KiCad result offsets its weak NanoCoder result of 1.031. The harmonic mean separates them because it is pulled down by the smallest entry. Among the two token objectives the ordering reverses between settings, with decaying cross-entropy ahead for the replaced target at 0.6226 against 0.6042, which the manuscript states so that neither token objective is presented as dominant.
+
+### Other corrections in this pass
+
+Bolded cells written as `\textbf{$+37.6$}` do not render bold, because the emphasis does not cross into math mode. Three such cells were converted to `$\mathbf{+37.6}$`. The Method cross-reference to the capacity ablation was repointed from the removed `sec:generality` label to `sec:ablation-capacity`, and the capacity table is now referenced from its own prose. The build has no undefined references and every table and figure is referenced.
+
+## Experiments consolidated into one main table, 16 September 2026
+
+All single-request results now live in one table of 21 rows covering both settings, every target and every workload, with speedup over autoregressive decoding, acceptance length, the matching reference drafter and the ratio to it. Llama3.2-3B has no published native drafter, so its three reference cells carry the spanning text "none published" rather than being left blank, which keeps the no-empty-cell rule while showing that the row is a real measurement.
+
+Targets are written $A \leftarrow B$, meaning target $A$ accelerated by a drafter built for $B$. The internal transfer labels T1 to T4 no longer appear anywhere in the manuscript.
+
+Each reference drafter is now named and defined where it is introduced. The \emph{unadapted drafter} is the released checkpoint run against a fine-tuned target with no adaptation. The \emph{native drafter} is one trained for the target being accelerated. The four placement-ablation arms are defined in an explicit list before their table: single fused projection, draft-transformer LoRA, single joint map and rank-$r$ maps. The phrase "draft body" no longer appears without saying that it means a LoRA on the attention and MLP projections inside the draft transformer.
+
+Figure 3 now covers both settings in three panels: fine-tuned scaling in examples, fine-tuned scaling in anchors, and transfer scaling in examples. The transfer panel is new and reads the MSE50 coverage table in `../phase2_results.md` for the 4{,}096, 8{,}192 and 16{,}384-example three-epoch fits. Recovery of the native drafter rises monotonically on all four workloads, from 97.6 to 99.9 percent on Math and 75.2 to 84.8 percent on Code, so the workloads that transfer worst are also the ones with the most headroom. `figures/draw_scaling.py` asserts both grids are complete and saves the plotted values to `figures/scaling_data.json`.
+
+Whitespace was caused by float placement. All six tables and both figures now use `[t]`, which removed the sparse pages. Body pages now carry between 584 and 802 words each, where the previous layout had a 309-word page and large mid-page gaps.
+
+Checks on the final build: no undefined references, no unreferenced tables or figures, no overfull boxes, no LaTeX or BibTeX warnings, no em dashes and no prose semicolons.
+
+## Main table pinned ahead of the ablations, 16 September 2026
+
+The 21-row main results table was floating past the ablation subsections and landing beside the placement-ablation table. Two changes fix the ordering. The table is now declared immediately after the opening sentence of the main-results subsection rather than after its two discussion paragraphs, and `placeins` is loaded so a `\FloatBarrier` at the end of that subsection prevents any main-results float from drifting into the ablations.
+
+`placeins` controls float placement only. It does not touch geometry, fonts, margins or the ICLR style files, so the template remains unmodified in every respect the venue specifies.
+
+Resulting order: the main table sits at the top of the page carrying the main-results subsection, the ablation subsections follow, and the placement-ablation table appears with them. Body pages carry between 584 and 802 words, so the barrier introduced no new whitespace.

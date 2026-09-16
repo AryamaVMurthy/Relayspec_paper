@@ -2,29 +2,21 @@
 \label{sec:dflash-background}
 The \emph{original target} is the model used to train the available drafter. The \emph{new target} is the model to be accelerated. A \emph{native drafter} is trained for the target being evaluated. In cross-model transfer, the original target used for feature reconstruction and the native drafter used as a performance baseline are therefore different objects.
 
-DFlash predicts a block of candidate tokens from an anchor token and masked future positions in one forward pass. It fuses selected target hidden states and uses the resulting context to supply keys and values to every draft layer~\citep{chen2026dflash}. Our pretrained checkpoints use five feature streams. We write the original target's feature at stream $i$ and position $t$ as $h^{(o)}_{i,t}\in\mathbb R^{d_r}$. The original fusion blocks $F_i\in\mathbb R^{d_d\times d_r}$ produce
+DFlash predicts a block of candidate tokens from an anchor token and masked future positions in one forward pass. It fuses selected target hidden states and uses the resulting context to supply keys and values to every draft layer~\citep{chen2026dflash}. A drafter of this kind reads $K$ feature streams, five for our DFlash checkpoints and three for EAGLE-3~\citep{li2025eagle3}. We write the original target's feature at stream $i$ and position $t$ as $h^{(o)}_{i,t}\in\mathbb R^{d_r}$. The original fusion blocks $F_i\in\mathbb R^{d_d\times d_r}$ produce
 \begin{equation}
- c^{(r)}_t=N\!\left(\sum_{i=1}^{5}F_i h^{(o)}_{i,t}\right),
- \qquad F=[F_1\;\cdots\;F_5].
+ c^{(o)}_t=N\!\left(\sum_{i=1}^{K}F_i h^{(o)}_{i,t}\right),
+ \qquad F=[F_1\;\cdots\;F_K].
  \label{eq:native-fusion}
 \end{equation}
 Here $d_d$ is the draft hidden width and $N$ is the original RMSNorm, which normalizes vector magnitude and applies learned coordinate-wise gains~\citep{zhang2019rmsnorm}. For the new target, $h_{i,t}\in\mathbb R^{d_t}$ and $H_i=[h_{i,1}\;\cdots\;h_{i,n}]\in\mathbb R^{d_t\times n}$. We use column vectors throughout. A RelaySpec map has shape $W_i\in\mathbb R^{d_r\times d_t}$, so $W_i h_{i,t}$ can enter the original fusion block. The widths $d_t$, $d_r$, and $d_d$ need not be equal.
 
 \subsection{Verification and useful training positions}
 \label{sec:speculative-decoding}
-Let $x_{1:t}$ be an accepted prefix. The drafter proposes $K$ tokens $y_{1:K}$ and the target scores them in parallel under $x_{1:t},y_{<j}$. With draft distribution $q$ and target distribution $p$ over a shared vocabulary, speculative sampling accepts $y_j$ with probability
+Let $x_{1:t}$ be an accepted prefix. The drafter proposes $\gamma$ tokens $y_{1:\gamma}$ and the target scores them in parallel under $x_{1:t},y_{<j}$. With draft distribution $q$ and target distribution $p$ over a shared vocabulary, speculative sampling accepts $y_j$ with probability
 \begin{equation}
  a_j=\min\!\left(1,\frac{p(y_j\mid x_{1:t},y_{<j})}{q(y_j\mid x_{1:t},y_{<j})}\right).
  \label{eq:spec-accept}
 \end{equation}
 At rejection, a correction is sampled from the normalized positive part of $p-q$. If all proposals are accepted, the target provides a further token. Using the actual proposal probabilities preserves the target distribution in exact arithmetic~\citep{leviathan2023speculative,chen2023sampling}. Our experiments use greedy decoding: retain the longest prefix matching the target's greedy choices, then use the target's correction.
 
-Only a consecutive prefix contributes accepted draft tokens. If $L\in\{0,\ldots,K\}$ is its length, then $\mathbb E[L]=\sum_{j=1}^K\Pr(L\geq j)$. This motivates supervising the first incorrect proposal as well as the correct prefix. AUF applies that rule to comparisons against saved target tokens~\citep{yang2026specauf}. Its training-time correct prefix is a prediction diagnostic, not a direct measurement of live decoding speed.
-
-\subsection{Access, alignment, and measurement}
-\label{sec:assumptions}
-Both settings require access to the new target's hidden states. Specialization starts from the existing same-model drafter with identity maps. Cross-model reconstruction additionally runs the original target on the same text, using aligned positions as supervision. The original target is needed for this data preparation, not adapted inference. Only features available from the current prefix may condition a draft block. The target remains frozen during drafter adaptation, including any active task adapter.
-
-Shared token IDs allow direct verification. Different tokenizers require a separate conversion and alignment procedure, which the hidden-state maps do not supply. Our cross-tokenizer evaluation includes this bridge's execution cost. Greedy bridge results do not establish stochastic distribution preservation, and exact-arithmetic guarantees do not imply bitwise agreement across numerical kernels.
-
-We distinguish accepted draft tokens from emitted tokens, which include target corrections or bonus tokens. We also distinguish mean per-request token rates, total tokens divided by summed request time, and aggregate tokens divided by workload wall time under concurrency. These measurements have different denominators and are compared only under matched conditions. Reconstruction error and offline correct-prefix length diagnose the maps, while live acceptance and timing establish decoding performance.
+Only a consecutive prefix contributes accepted draft tokens. If $L\in\{0,\ldots,\gamma\}$ is its length, then $\mathbb E[L]=\sum_{j=1}^{\gamma}\Pr(L\geq j)$. This motivates supervising the first incorrect proposal as well as the correct prefix. AUF applies that rule to comparisons against saved target tokens~\citep{yang2026specauf}. Its training-time correct prefix is a prediction diagnostic, not a direct measurement of live decoding speed.

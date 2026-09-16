@@ -1,0 +1,490 @@
+{
+  "fine_tuned_metric": "percent gain in mean per-request tokens/s over the unadapted drafter",
+  "transfer_metric": "mean per-request tokens/s divided by the native drafter",
+  "sources": [
+    "phase1_results.md: scaling export (4k-16k)",
+    "phase2_results.md: MSE 50% coverage results (4k-16k)",
+    "small_scaling.md: 16-2,048 example extension, same native/AR controls reused"
+  ],
+  "fine_tuned_examples": [
+    {
+      "domain": "kicad",
+      "examples": 16,
+      "gain_percent": 5.003561253561251
+    },
+    {
+      "domain": "kicad",
+      "examples": 128,
+      "gain_percent": 23.041310541310555
+    },
+    {
+      "domain": "kicad",
+      "examples": 512,
+      "gain_percent": 40.147198480531834
+    },
+    {
+      "domain": "kicad",
+      "examples": 1024,
+      "gain_percent": 55.51994301994301
+    },
+    {
+      "domain": "kicad",
+      "examples": 2048,
+      "gain_percent": 72.48338081671417
+    },
+    {
+      "domain": "kicad",
+      "examples": 4096,
+      "gain_percent": 89.51965975646755
+    },
+    {
+      "domain": "kicad",
+      "examples": 8192,
+      "gain_percent": 103.59941602858606
+    },
+    {
+      "domain": "kicad",
+      "examples": 12288,
+      "gain_percent": 112.90022618045552
+    },
+    {
+      "domain": "kicad",
+      "examples": 16384,
+      "gain_percent": 112.95746153925661
+    },
+    {
+      "domain": "math",
+      "examples": 16,
+      "gain_percent": 10.806826997672614
+    },
+    {
+      "domain": "math",
+      "examples": 128,
+      "gain_percent": 24.546159813809144
+    },
+    {
+      "domain": "math",
+      "examples": 512,
+      "gain_percent": 30.690457719162147
+    },
+    {
+      "domain": "math",
+      "examples": 1024,
+      "gain_percent": 36.04344453064392
+    },
+    {
+      "domain": "math",
+      "examples": 2048,
+      "gain_percent": 38.54150504266873
+    },
+    {
+      "domain": "math",
+      "examples": 4096,
+      "gain_percent": 37.57749920237758
+    },
+    {
+      "domain": "math",
+      "examples": 8192,
+      "gain_percent": 40.88418522459107
+    },
+    {
+      "domain": "math",
+      "examples": 12288,
+      "gain_percent": 46.97808669001582
+    },
+    {
+      "domain": "math",
+      "examples": 16384,
+      "gain_percent": 44.95159611985753
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 16,
+      "gain_percent": 0.5371708999270419
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 128,
+      "gain_percent": 1.1804496319384628
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 512,
+      "gain_percent": 5.544134226407604
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 1024,
+      "gain_percent": 4.695271569732751
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 2048,
+      "gain_percent": 8.024404801379404
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 4096,
+      "gain_percent": 8.065706723183897
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 8192,
+      "gain_percent": 14.67331283896749
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 12288,
+      "gain_percent": 11.401949044203885
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 16384,
+      "gain_percent": 13.098779782755997
+    }
+  ],
+  "fine_tuned_anchors": [
+    {
+      "domain": "kicad",
+      "arch": "maps",
+      "anchors": 8,
+      "gain_percent": 59.650468133287916
+    },
+    {
+      "domain": "kicad",
+      "arch": "maps",
+      "anchors": 24,
+      "gain_percent": 82.72866680360711
+    },
+    {
+      "domain": "kicad",
+      "arch": "maps",
+      "anchors": 32,
+      "gain_percent": 89.51965975646755
+    },
+    {
+      "domain": "kicad",
+      "arch": "maps",
+      "anchors": 64,
+      "gain_percent": 94.62798679615057
+    },
+    {
+      "domain": "kicad",
+      "arch": "maps",
+      "anchors": 128,
+      "gain_percent": 102.24392846568287
+    },
+    {
+      "domain": "kicad",
+      "arch": "body",
+      "anchors": 8,
+      "gain_percent": 59.33330920781093
+    },
+    {
+      "domain": "kicad",
+      "arch": "body",
+      "anchors": 24,
+      "gain_percent": 73.76582987453601
+    },
+    {
+      "domain": "kicad",
+      "arch": "body",
+      "anchors": 32,
+      "gain_percent": 75.45670361187852
+    },
+    {
+      "domain": "kicad",
+      "arch": "body",
+      "anchors": 64,
+      "gain_percent": 86.51336349173859
+    },
+    {
+      "domain": "kicad",
+      "arch": "body",
+      "anchors": 128,
+      "gain_percent": 91.50321615171686
+    },
+    {
+      "domain": "math",
+      "arch": "maps",
+      "anchors": 8,
+      "gain_percent": 34.84725874243855
+    },
+    {
+      "domain": "math",
+      "arch": "maps",
+      "anchors": 24,
+      "gain_percent": 37.12937977660544
+    },
+    {
+      "domain": "math",
+      "arch": "maps",
+      "anchors": 32,
+      "gain_percent": 37.57749920237758
+    },
+    {
+      "domain": "math",
+      "arch": "maps",
+      "anchors": 64,
+      "gain_percent": 38.004318734964706
+    },
+    {
+      "domain": "math",
+      "arch": "maps",
+      "anchors": 128,
+      "gain_percent": 43.46604742264386
+    },
+    {
+      "domain": "math",
+      "arch": "body",
+      "anchors": 8,
+      "gain_percent": 37.88100146315989
+    },
+    {
+      "domain": "math",
+      "arch": "body",
+      "anchors": 24,
+      "gain_percent": 40.160209598829134
+    },
+    {
+      "domain": "math",
+      "arch": "body",
+      "anchors": 32,
+      "gain_percent": 36.41384949218216
+    },
+    {
+      "domain": "math",
+      "arch": "body",
+      "anchors": 64,
+      "gain_percent": 40.14484947110184
+    },
+    {
+      "domain": "math",
+      "arch": "body",
+      "anchors": 128,
+      "gain_percent": 40.56860672101459
+    },
+    {
+      "domain": "nanocoder",
+      "arch": "maps",
+      "anchors": 8,
+      "gain_percent": 4.6964785874625825
+    },
+    {
+      "domain": "nanocoder",
+      "arch": "maps",
+      "anchors": 24,
+      "gain_percent": 10.355704619767403
+    },
+    {
+      "domain": "nanocoder",
+      "arch": "maps",
+      "anchors": 32,
+      "gain_percent": 8.065706723183897
+    },
+    {
+      "domain": "nanocoder",
+      "arch": "maps",
+      "anchors": 64,
+      "gain_percent": 12.649379105270286
+    },
+    {
+      "domain": "nanocoder",
+      "arch": "maps",
+      "anchors": 128,
+      "gain_percent": 12.699112188071604
+    },
+    {
+      "domain": "nanocoder",
+      "arch": "body",
+      "anchors": 8,
+      "gain_percent": 9.145180883832783
+    },
+    {
+      "domain": "nanocoder",
+      "arch": "body",
+      "anchors": 24,
+      "gain_percent": 11.325925551589
+    },
+    {
+      "domain": "nanocoder",
+      "arch": "body",
+      "anchors": 32,
+      "gain_percent": 9.82058154211909
+    },
+    {
+      "domain": "nanocoder",
+      "arch": "body",
+      "anchors": 64,
+      "gain_percent": 12.291287138828544
+    },
+    {
+      "domain": "nanocoder",
+      "arch": "body",
+      "anchors": 128,
+      "gain_percent": 10.391603871773025
+    }
+  ],
+  "transfer_examples": [
+    {
+      "examples": 16,
+      "workload": "math",
+      "x_native": 0.15646753719459486
+    },
+    {
+      "examples": 16,
+      "workload": "gsm",
+      "x_native": 0.19371698325278183
+    },
+    {
+      "examples": 16,
+      "workload": "code",
+      "x_native": 0.18894677834201676
+    },
+    {
+      "examples": 16,
+      "workload": "chat",
+      "x_native": 0.3246927374301676
+    },
+    {
+      "examples": 128,
+      "workload": "math",
+      "x_native": 0.5174939715182675
+    },
+    {
+      "examples": 128,
+      "workload": "gsm",
+      "x_native": 0.42930201191412837
+    },
+    {
+      "examples": 128,
+      "workload": "code",
+      "x_native": 0.24282793642419048
+    },
+    {
+      "examples": 128,
+      "workload": "chat",
+      "x_native": 0.3908379888268156
+    },
+    {
+      "examples": 512,
+      "workload": "math",
+      "x_native": 0.9073206242322216
+    },
+    {
+      "examples": 512,
+      "workload": "gsm",
+      "x_native": 0.7726199842643587
+    },
+    {
+      "examples": 512,
+      "workload": "code",
+      "x_native": 0.3850161577524237
+    },
+    {
+      "examples": 512,
+      "workload": "chat",
+      "x_native": 0.5331843575418994
+    },
+    {
+      "examples": 1024,
+      "workload": "math",
+      "x_native": 0.9702443241275763
+    },
+    {
+      "examples": 1024,
+      "workload": "gsm",
+      "x_native": 0.9041249859503203
+    },
+    {
+      "examples": 1024,
+      "workload": "code",
+      "x_native": 0.5146738772010816
+    },
+    {
+      "examples": 1024,
+      "workload": "chat",
+      "x_native": 0.6426815642458101
+    },
+    {
+      "examples": 2048,
+      "workload": "math",
+      "x_native": 0.9828017653214431
+    },
+    {
+      "examples": 2048,
+      "workload": "gsm",
+      "x_native": 0.9576261661234124
+    },
+    {
+      "examples": 2048,
+      "workload": "code",
+      "x_native": 0.642682846402427
+    },
+    {
+      "examples": 2048,
+      "workload": "chat",
+      "x_native": 0.7548603351955308
+    },
+    {
+      "examples": 4096,
+      "workload": "math",
+      "x_native": 0.9764
+    },
+    {
+      "examples": 4096,
+      "workload": "gsm",
+      "x_native": 0.9422
+    },
+    {
+      "examples": 4096,
+      "workload": "code",
+      "x_native": 0.7522
+    },
+    {
+      "examples": 4096,
+      "workload": "chat",
+      "x_native": 0.8096
+    },
+    {
+      "examples": 8192,
+      "workload": "math",
+      "x_native": 0.9986
+    },
+    {
+      "examples": 8192,
+      "workload": "gsm",
+      "x_native": 0.9753
+    },
+    {
+      "examples": 8192,
+      "workload": "code",
+      "x_native": 0.8322
+    },
+    {
+      "examples": 8192,
+      "workload": "chat",
+      "x_native": 0.8882
+    },
+    {
+      "examples": 16384,
+      "workload": "math",
+      "x_native": 0.9989
+    },
+    {
+      "examples": 16384,
+      "workload": "gsm",
+      "x_native": 0.9848
+    },
+    {
+      "examples": 16384,
+      "workload": "code",
+      "x_native": 0.8477
+    },
+    {
+      "examples": 16384,
+      "workload": "chat",
+      "x_native": 0.9053
+    }
+  ]
+}

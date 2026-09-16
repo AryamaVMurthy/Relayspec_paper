@@ -13,3 +13,4 @@ __pycache__/
 *.fls
 *.fdb_latexmk
 *.synctex.gz
+**/build_full/

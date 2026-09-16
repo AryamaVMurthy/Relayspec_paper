@@ -275,6 +275,10 @@ SD$^2$ (frozen drafter) & 19.92 & 12.48 & 1.60 [1.56, 1.63] \\
 \end{tabular}
 \end{table}
 
+\subsection{Additional hardware and workload coverage}
+\label{sec:future-hw}
+The results above use one L40S GPU for single-request timing and vLLM on L40S for concurrent serving. Three extensions are planned and not yet measured: throughput and memory behavior on DGX Spark and A100 hardware, multi-GPU tensor-parallel serving of larger targets, and adaptation to long-context workloads beyond the 8{,}192-token cap used for KiCad. These extensions test whether the recovery and cost trends of Sections~\ref{sec:main-results}--\ref{sec:related-work-compare} hold on different accelerators, under tensor parallelism, and at longer sequence lengths, and are left for a revision.
+
 \subsection{Adaptation cost}
 \label{sec:adaptation-cost}
 Reusing a drafter is only worthwhile if adapting it costs much less than training one. We cannot compare the two in GPU-hours from published numbers, because the DFlash paper reports its training data and schedule but not its training time or hardware budget, and it trains on different accelerators than we use~\citep{chen2026dflash}. We therefore compare how much supervision each recipe consumes and report measured time only for our own fits, keeping fitting separate from data preparation as RepSpec does~\citep{huo2026repspec}.
