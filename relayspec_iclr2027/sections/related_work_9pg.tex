@@ -6,13 +6,13 @@ SD$^2$ is the closest method-level comparison because it also conditions a pretr
 
 \begin{table}[t]
 \centering
-\caption{Where each method places trainable parameters when a target changes. \emph{Draft network frozen} means no weight inside the drafter's own transformer or prediction head is updated. \emph{Folds away} means the adaptation leaves no extra operation at inference. \emph{Reuses a released drafter} means adaptation starts from a published checkpoint rather than training one.}
+\caption{Where each method places trainable parameters when a target changes. \emph{Draft network frozen}: no weight inside the drafter's own transformer or prediction head is updated. \emph{No added inference cost}: the trained parameters are multiplied into an existing weight matrix beforehand, so the adapted model runs the same operations at the same speed as the original. \emph{Reuses a released drafter}: adaptation starts from a published checkpoint.}
 \label{tab:related}
 \setlength{\tabcolsep}{3pt}
 \scriptsize
 \begin{tabular}{llcccc}
 \toprule
-Method & What is trained & \shortstack{Uses target\\features} & \shortstack{Draft network\\frozen} & \shortstack{Folds\\away} & \shortstack{Reuses a\\released drafter} \\
+Method & What is trained & \shortstack{Uses target\\features} & \shortstack{Draft network\\frozen} & \shortstack{No added\\inference cost} & \shortstack{Reuses a\\released drafter} \\
 \midrule
 EAGLE-3~\citep{li2025eagle3} & Draft network & Yes & No & No & No \\
 DFlash~\citep{chen2026dflash} & Draft transformer & Yes & No & No & No \\
