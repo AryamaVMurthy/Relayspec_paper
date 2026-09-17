@@ -2,12 +2,12 @@ RelaySpec reuses a pretrained speculative drafter when its target is fine-tuned 
 
 \subsection{Adapting the drafter's inputs}
 \label{sec:method-inputs}
-We retain the drafter's $K$ target-layer inputs and place one map before each original fusion block~\citep{chen2026dflash}. DFlash uses $K=5$. Map $W_i$ connects the new target's selected feature stream $i$ to the corresponding original drafter input. The same map is applied at every token position. At position $t$, let $h_{i,t}\in\mathbb R^{d_t}$ be the new target's feature from selected layer $i$. A bias-free map $W_i\in\mathbb R^{d_r\times d_t}$ converts it to the width $d_r$ expected by the drafter. The frozen fusion block $F_i\in\mathbb R^{d_d\times d_r}$ projects it to the draft width $d_d$. The $K$ streams give the context
+We retain the drafter's $K$ target-layer inputs and place one map before each original fusion block~\citep{chen2026dflash}, with $K=5$ for DFlash. Map $W_i$ connects the new target's feature stream $i$ to the corresponding drafter input and is applied at every token position. A bias-free $W_i\in\mathbb R^{d_r\times d_t}$ converts $h_{i,t}\in\mathbb R^{d_t}$ to the width $d_r$ the drafter expects, and the frozen fusion block $F_i\in\mathbb R^{d_d\times d_r}$ projects it to the draft width $d_d$. The $K$ streams give the context
 \begin{equation}
  \widehat c_t=N\!\left(\sum_{i=1}^{K}F_i W_i h_{i,t}\right),
  \label{eq:mapped-context}
 \end{equation}
-where $N$ is the original RMSNorm~\citep{zhang2019rmsnorm}. Only $W_1,\ldots,W_K$ are trained. The target, fusion projection, normalization, and draft transformer remain frozen. We also retain and freeze the original drafter's token embeddings and vocabulary output head.
+where $N$ is the original RMSNorm~\citep{zhang2019rmsnorm}. Only $W_1,\ldots,W_K$ are trained; the target, fusion projection, normalization, draft transformer, token embeddings and vocabulary head all remain frozen.
 
 After training, we multiply each learned matrix $W_i$ by its corresponding fusion block $F_i$ and join the $K$ products into one matrix:
 \begin{equation}
@@ -19,11 +19,11 @@ Block multiplication gives $G[h_{1,t};\ldots;h_{K,t}]=\sum_i F_iW_ih_{i,t}$, so 
 
 \subsection{Training for a LoRA-adapted target}
 \label{sec:method-auf}
-\textbf{Initialization.} When LoRA fine-tuning~\citep{hu2022lora} changes the target, its feature dimensions remain the same. We therefore initialize each map to the identity, $W_i=I$, so inserting the maps does not disrupt the existing drafter's behavior with the adapted target. At initialization, $F_iW_ih_{i,t}=F_ih_{i,t}$ for every input, so the maps leave the original computation unchanged. This preserves the starting behavior with the active LoRA target, not the behavior of the target before fine-tuning. Training then learns changes $\Delta_i=W_i-I$ that help the frozen drafter predict the adapted target's tokens.
+\textbf{Initialization.} LoRA fine-tuning~\citep{hu2022lora} leaves the feature dimensions unchanged, so we initialize each map to the identity. Then $F_iW_ih_{i,t}=F_ih_{i,t}$ for every input, and inserting the maps does not disrupt the existing drafter's behavior with the adapted target; this preserves the starting behavior with the active LoRA target, not the behavior before fine-tuning. Training learns changes $\Delta_i=W_i-I$ that help the frozen drafter predict the adapted target's tokens.
 
 \textbf{Training data.} We generate responses with the adapted target and save their tokens and hidden states. At sampled response positions the drafter receives one known token followed by 15 masked positions, matching the pretrained Qwen DFlash block of 16~\citep{chen2026dflash}, so we adapt the existing drafter without changing its prediction procedure. Each block sees target features only from before its starting position, and attention connects positions within a block but not separate blocks.
 
-\textbf{Objective.} Because verification stops at the first rejected proposal, we supervise the correct prefix and the first incorrect prediction, excluding later positions. This is the accept-until-fail (AUF) objective~\citep{yang2026specauf}. For block $b$ and proposal position $j$, let $q_{bj}$ be the predicted token distribution, $y_{bj}$ the saved target token, and $m_{bj}$ a mask that excludes padding and non-response positions. We compute
+\textbf{Objective.} Because verification stops at the first rejected proposal, we supervise the correct prefix and the first incorrect prediction, excluding later positions: the accept-until-fail (AUF) objective~\citep{yang2026specauf}. For block $b$ and position $j$, with $q_{bj}$ the predicted distribution, $y_{bj}$ the saved target token and $m_{bj}$ a mask excluding padding and non-response positions,
 \begin{equation}
  \begin{gathered}
  u_{bj}=\mathbf 1\!\left[\arg\max_v q_{bj}(v)=y_{bj}\ \text{or}\ m_{bj}=0\right],
@@ -38,11 +38,11 @@ The product includes only earlier predictions, so the first failure still receiv
 
 \subsection{Training for transfer across models}
 \label{sec:method-mse}
-\textbf{Initialization.} A drafter trained with one target expects that target's hidden states. Replacing the target can change both their dimensions and meaning. We therefore train the maps to reconstruct features from the original target, the model used to train the drafter. For this setting, we initialize the maps with independent Xavier-uniform values~\citep{glorot2010initialization}.
+\textbf{Initialization.} A drafter trained with one target expects that target's hidden states, and replacing the target changes both their dimensions and meaning. We therefore train the maps to reconstruct features from the original target, initializing them with independent Xavier-uniform values~\citep{glorot2010initialization}.
 
 \textbf{Training data.} We generate responses with the new target, then run both targets causally on the same saved prompt and response to collect paired hidden states; the original target does not generate a separate response and is not used during adapted inference. With a shared tokenizer both receive identical token IDs, and when tokenizers differ we pair only positions corresponding to the same text prefix.
 
-\textbf{Objective.} For example $b$ and position $t$, let $h_{bti}$ and $h^{(o)}_{bti}$ denote the paired new- and original-target features in stream $i$. The original features supply the context we aim to reconstruct:
+\textbf{Objective.} Let $h_{bti}$ and $h^{(o)}_{bti}$ be the paired new- and original-target features in stream $i$. The original features supply the context we reconstruct:
 \begin{equation}
  c^{(o)}_{bt}=N\!\left(\sum_{i=1}^{K}F_i h^{(o)}_{bti}\right).
  \label{eq:original-context}

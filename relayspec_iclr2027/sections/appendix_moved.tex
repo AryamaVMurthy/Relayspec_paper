@@ -120,7 +120,7 @@ Llama3.1-8B $\leftarrow$ Qwen3-4B & Math & \textbf{1894.99} & 1046.94 & 0.553 \\
 \label{app:eagle-table}
 \begin{table}[t]
 \centering
-\caption{Generalization to EAGLE-3, using three input maps. Token supervision is used for a fine-tuned target and reconstruction for a replaced one, following the selection in Section~\ref{sec:ablation-objective}. The reference is the unadapted EAGLE-3 drafter for the fine-tuned block and a published EAGLE-3 drafter native to Qwen3-8B for the replaced block. Best in each row in bold. Acceptance uses EAGLE-3's upstream counters and is not comparable with the DFlash tables.}
+\caption{Generalization to EAGLE-3, using three input maps. Token supervision is used for a fine-tuned target and reconstruction for a replaced one, following the selection in Section~\ref{sec:ablations}. The reference is the unadapted EAGLE-3 drafter for the fine-tuned block and a published EAGLE-3 drafter native to Qwen3-8B for the replaced block. Best in each row in bold. Acceptance uses EAGLE-3's upstream counters and is not comparable with the DFlash tables.}
 \label{tab:eagle}
 \small
 \begin{tabular}{llrrrrr}
@@ -203,7 +203,6 @@ SD$^2$ (frozen drafter) & 19.92 & 12.48 & 1.60 [1.56, 1.63] \\
 
 \subsection{Objective ablation}
 \label{app:objective-table}
-\label{sec:ablation-objective}
 \begin{table}[t]
 \centering
 \caption{Which objective trains the maps. The upper block reports throughput relative to the unadapted drafter for fine-tuned Qwen3-4B targets. The lower block reports throughput relative to the native Qwen3-8B drafter for transfer from Qwen3-4B, on the matched 8{,}192-example fits. MSE50 and MSE100 supervise that fraction of prompt and response positions. Best in each column in bold. HM is the selection criterion.}
@@ -229,8 +228,6 @@ Replaced & Reconstruction, MSE100 & 0.998 & \textbf{0.990} & 0.828 & \textbf{0.8
 \end{tabular}
 \end{table}
 
-\subsection{Supervision budget}
-\input{figures/scaling_figure}
 
 \subsection{EAGLE-3 recurrent objective}
 \label{app:eagle-method}

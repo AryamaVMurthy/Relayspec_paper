@@ -1,18 +1,13 @@
 \label{sec:dflash-background}
 The \emph{original target} is the model used to train the available drafter, which we call the original target's \emph{native drafter}. The \emph{new target} is the model we want to accelerate.
 
-DFlash predicts several future tokens in parallel~\citep{chen2026dflash}. At each decoding step it forms a block with the last token committed by the target, called the \emph{anchor}, followed by masked proposal positions. The released Qwen3-4B DFlash checkpoint has a default block size of 16, so each block contains one anchor and 15 proposals, and the reference generator defaults to temperature zero, so we use greedy decoding. One drafter pass predicts all 15 proposals and the target checks them in parallel. With greedy verification, speculative decoding is theoretically guaranteed to produce the same token sequence as greedy target-only decoding~\citep{leviathan2023speculative,chen2023sampling}.
+DFlash predicts several future tokens in parallel~\citep{chen2026dflash}. At each decoding step it forms a block with the last token committed by the target, the \emph{anchor}, followed by masked proposal positions. The released Qwen3-4B checkpoint uses block size 16, so each block holds one anchor and 15 proposals, and its reference generator defaults to temperature zero, so we use greedy decoding. One drafter pass predicts all 15 proposals and the target checks them in parallel. With greedy verification, speculative decoding is guaranteed to produce the same token sequence as greedy target-only decoding~\citep{leviathan2023speculative,chen2023sampling}.
 
 DFlash also conditions the drafter on hidden-state representations from five fixed target layers. We use $d_t$ for the new target's hidden-state width, $d_r$ for the original target's width expected by the reused fusion projection, and $d_d$ for the drafter transformer's hidden width. Let $h^{(o)}_{i,t}\in\mathbb R^{d_r}$ be the original target's representation at token $t$ from layer $i$. The original fusion projection has five blocks $F_i\in\mathbb R^{d_d\times d_r}$, whose horizontal concatenation is $F=[F_1\;\cdots\;F_5]$. For one token, DFlash computes
 \begin{equation}
  c^{(o)}_t=N\!\left(\sum_{i=1}^{5}F_i h^{(o)}_{i,t}\right)\in\mathbb R^{d_d},
  \label{eq:native-fusion}
 \end{equation}
-where $N$ is the original RMSNorm~\citep{zhang2019rmsnorm}. DFlash supplies this fused context as key and value entries to every transformer layer of the drafter~\citep{chen2026dflash,vaswani2017attention}, with the anchor and masked positions providing the queries; only target representations before the anchor are visible, so the drafter cannot access the tokens it is predicting.
+where $N$ is the original RMSNorm~\citep{zhang2019rmsnorm}. DFlash supplies this fused context as keys and values to every drafter layer~\citep{chen2026dflash,vaswani2017attention}, with the anchor and masked positions providing the queries; only representations before the anchor are visible, so the drafter cannot access the tokens it is predicting.
 
-RelaySpec adapts this interface. For $n$ tokens the new target supplies $H_i=[h_{i,1}\;\cdots\;h_{i,n}]\in\mathbb R^{d_t\times n}$ from layer $i$, and RelaySpec learns $W_i\in\mathbb R^{d_r\times d_t}$, mapping one vector to $W_i h_{i,t}\in\mathbb R^{d_r}$. The adapted context for one token is
-\begin{equation}
- \hat c_t=N\!\left(\sum_{i=1}^{5}F_iW_i h_{i,t}\right)\in\mathbb R^{d_d},
- \label{eq:relayspec-fusion}
-\end{equation}
-and the maps fold into $G=[F_1W_1\;\cdots\;F_5W_5]\in\mathbb R^{d_d\times 5d_t}$. The fusion projection, RMSNorm, drafter transformer, token embedding and vocabulary head remain frozen. If the new target uses a different tokenizer, a separate vocabulary conversion is required.
+RelaySpec adapts this interface: for $n$ tokens the new target supplies $H_i\in\mathbb R^{d_t\times n}$ from layer $i$, and RelaySpec learns $W_i\in\mathbb R^{d_r\times d_t}$ mapping each vector to $W_i h_{i,t}$. Section~\ref{sec:method} gives the adapted context and its folded form. If the new target uses a different tokenizer, a separate vocabulary conversion is required.
