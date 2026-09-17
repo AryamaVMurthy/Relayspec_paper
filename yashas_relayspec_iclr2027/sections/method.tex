@@ -1,7 +1,59 @@
-\subsection{Training the interface maps}
+RelaySpec reuses a pretrained drafter after its target changes through LoRA fine-tuning or cross-transfer. It trains maps on the target features supplied to the drafter while keeping the target and drafter weights frozen. We describe the DFlash interface, how the maps are trained, and how the same construction extends to EAGLE-3.
 
-\paragraph{LoRA-fine-tuned targets.}
-For a LoRA-fine-tuned target, each map is square and starts from the identity. The maps therefore pass the target hidden states to the existing fusion projection unchanged at initialization. This preserves the behavior of the unchanged drafter with that target. Training then changes the mapped features so that they better condition the frozen drafter to predict the target's tokens. We use accept-until-fail (AUF)~\citep{yang2026specauf}. Cross-entropy on saved target responses supervises the correct draft prefix and the first incorrect proposal. Positions after that error are excluded because verification would stop there.
+\subsection{DFlash and the feature maps}
+\label{sec:dflash-background}
+\label{sec:method-inputs}
+DFlash begins each block with the last token already committed by the target, called the anchor~\citep{chen2026dflash}. The drafter receives this known token followed by 15 masked positions in the released Qwen3-4B configuration. It predicts the next 15 tokens in one pass; the anchor itself is not a proposal. The target checks the proposals in parallel.
 
-\paragraph{Cross-model transfer.}
-The drafter was trained to process hidden states from its original target. A new target can produce different features and can have a different hidden-state width. We run the original and new targets on the same saved text and train each linear map to reconstruct the corresponding original-target feature from the new-target feature. The MSE objective also reconstructs the combined context after the frozen fusion projection and RMSNorm. Each feature error and the context error are divided by the squared norm of the corresponding original-target vector plus a small constant for numerical stability.
+DFlash also reads hidden states from five fixed target layers. Its original fusion projection combines those states, applies RMSNorm, and supplies the resulting context as keys and values to every drafter transformer layer~\citep{chen2026dflash,zhang2019rmsnorm}. The anchor and masked positions provide the queries. Only target states from before the anchor are visible. Let $K=5$, and let $h^{(o)}_{i,t}\in\mathbb R^{d_r}$ and $h_{i,t}\in\mathbb R^{d_t}$ be features from layer $i$ and token $t$ of the original and new targets. The original fusion block $F_i\in\mathbb R^{d_d\times d_r}$ projects to drafter width $d_d$. RelaySpec places a bias-free map $W_i\in\mathbb R^{d_r\times d_t}$ before each block. The original and adapted contexts are
+\begin{equation}
+ c^{(o)}_t=N\!\left(\sum_{i=1}^{K}F_i h^{(o)}_{i,t}\right),
+ \qquad
+ \widehat c_t=N\!\left(\sum_{i=1}^{K}F_iW_i h_{i,t}\right),
+ \label{eq:mapped-context}
+\end{equation}
+where $N:\mathbb R^{d_d}\to\mathbb R^{d_d}$ is the drafter's frozen RMSNorm. The same map is applied at every token position. Only the $W_i$ are trained. The target, fusion blocks, RMSNorm, drafter transformer, and selected token embeddings and output head remain frozen.
+
+Before inference, we multiply each map into its fusion block and join the products:
+\begin{equation}
+ G=[F_1W_1\;\cdots\;F_KW_K]\in\mathbb R^{d_d\times Kd_t},
+ \qquad \widehat c_t=N(G[h_{1,t};\ldots;h_{K,t}]).
+ \label{eq:folded-fusion}
+\end{equation}
+Thus one projection computes the mapped context without a separate mapping operation. The original normalization remains afterward. The linear maps can change feature width and still fold into this projection. Section~\ref{sec:ablation-capacity} compares them with a nonlinear alternative.
+
+\subsection{Training the maps}
+\paragraph{LoRA-fine-tuned targets.}\label{sec:method-auf}
+A LoRA-fine-tuned target changes the target but leaves its feature width unchanged~\citep{hu2022lora}. We start each square map at $W_i=I$, preserving the unchanged drafter's initial computation with that LoRA-fine-tuned target. We save target-generated responses and sample anchor positions within them. At each sampled position, the saved token is the known anchor and the following saved tokens provide up to 15 labels for the masked predictions. The anchor receives no loss. Since verification stops at the first wrong proposal, we train on the correct prefix and the first wrong proposal, a rule called accept-until-fail (AUF)~\citep{yang2026specauf}.
+
+For block $b$ and proposal position $j$, let $q_{bj}$ be the drafter's token distribution, $y_{bj}$ the saved target token, and $m_{bj}$ a mask for valid response labels. The loss is
+\begin{equation}
+ \begin{gathered}
+ u_{bj}=\mathbf 1\!\left[\arg\max_v q_{bj}(v)=y_{bj}\ \text{or}\ m_{bj}=0\right],
+ \qquad s_{bj}=\operatorname{stopgrad}\bigl({\textstyle\prod_{k<j}u_{bk}}\bigr),\\
+ \mathcal L_{\mathrm{AUF}}
+ =-\frac{\sum_{b,j}m_{bj}s_{bj}\log q_{bj}(y_{bj})}
+ {\sum_{b,j}m_{bj}s_{bj}}.
+ \end{gathered}
+ \label{eq:auf-method}
+\end{equation}
+The product tests only earlier positions, so the first error contributes to the loss. We recompute the mask from current predictions and hold it fixed during differentiation. Gradients pass through the frozen drafter to the maps. Each microbatch loss is normalized by its supervised positions before averaging across workers and accumulation steps.
+
+\paragraph{Cross-model transfer.}\label{sec:method-mse}
+When the new target is a different model, its hidden states may differ in width and content. We initialize the maps with independent Xavier-uniform values~\citep{glorot2010initialization}. We generate a response with the new target, then run both targets on the same saved text to collect paired features. The original target supplies training references but is absent during adapted inference. When tokenizers differ, feature positions are paired only at the same text prefix.
+
+For example $b$, let $S_b$ contain selected valid prompt and response positions. At position $t$, $h_{bti}$ and $h^{(o)}_{bti}$ are paired features, and $c^{(o)}_{bt}=N(\sum_i F_i h^{(o)}_{bti})$ is the original context. We train the maps to match both the individual features and their fused context:
+\begin{gather}
+ D(u,v)=\frac{\lVert u-v\rVert_2^2}{\lVert v\rVert_2^2+10^{-6}},
+ \label{eq:relative-error}\\
+ \mathcal L_{\mathrm{MSE}}
+ =\frac1B\sum_{b=1}^{B}\frac1{|S_b|}\sum_{t\in S_b}
+ \left[\frac1K\sum_{i=1}^{K}D(W_i h_{bti},h^{(o)}_{bti})
+ +D(\widehat c_{bt},c^{(o)}_{bt})\right].
+ \label{eq:mse-method}
+\end{gather}
+The feature and context terms have equal weight. Squared errors are divided by the corresponding original vector's squared norm plus a small constant. We exclude padding and average positions within each example before averaging examples. Unlike AUF, this loss does not require gradients through the drafter transformer.
+
+\subsection{Extension to EAGLE-3}
+\label{sec:method-generation}
+The same mapping idea applies to EAGLE-3, which reads three target feature streams and drafts tokens autoregressively~\citep{li2025eagle3}. We use $K=3$ maps before its existing feature projection, retain the original prediction network, and fold the maps into that projection as in Equation~\ref{eq:folded-fusion}. For a LoRA-fine-tuned target, identity-initialized maps receive token supervision along EAGLE-3's recurrent path. At each sampled anchor, the loss covers up to eight successive predictions through the first wrong token. A target token outside EAGLE-3's reduced vocabulary stops the path without a loss term. For cross-transfer, Xavier-initialized maps use the paired-feature loss in Equation~\ref{eq:mse-method}.

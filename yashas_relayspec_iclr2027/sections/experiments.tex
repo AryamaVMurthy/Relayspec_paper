@@ -1,1 +1,145 @@
-% Section intentionally left blank for later drafting.
+\subsection{Experimental setup}
+\label{sec:setup}
+
+\textbf{Models.} DFlash experiments reuse the Qwen3-4B drafter~\citep{chen2026dflash,yang2025qwen3}. EAGLE-3 experiments use its published checkpoints~\citep{li2025eagle3}. Their draft transformers remain frozen.
+
+\textbf{Targets.} LoRA-fine-tuned targets are Qwen3-4B with GSM8K, KiCad, or NanoCoder adapters and Qwen3-8B with GSM8K or CodeAlpaca adapters~\citep{hu2022lora,chaudhary2023codealpaca}. Cross-transfer uses Qwen3-8B $\leftarrow$ Qwen3-4B, Qwen3-4B $\leftarrow$ Qwen3-8B, Llama3.1-8B $\leftarrow$ Qwen3-4B, and Llama3.2-3B $\leftarrow$ Llama3.1-8B~\citep{grattafiori2024llama3}. The arrow points from the drafter's original target to the new target.
+
+\textbf{References.} As defined in Section~\ref{sec:preliminaries}, LoRA-fine-tuned results use the unadapted drafter and cross-transfer results use a native drafter. Autoregressive decoding uses the same target without a drafter.
+
+\textbf{Evaluation.} Single-request DFlash evaluation uses BF16 Transformers inference with greedy decoding~\citep{wolf2020transformers}. Cross-transfer uses MATH, GSM8K, Code from LiveCodeBench, and Chat from UltraFeedback~\citep{hendrycks2021math,cobbe2021gsm8k,jain2024livecodebench,cui2024ultrafeedback}. LoRA-fine-tuned results use held-out prompts from each adapter's domain. Each cell has 128 prompts and a 2{,}048-token cap, except KiCad at 8{,}192. Native DFlash outputs were verified to match the adapted outputs for every single-request evaluation with a native-DFlash control.
+
+\textbf{Metrics.} Speedup divides mean per-request throughput by autoregressive throughput on the same prompts. Acceptance length $\tau$ is pooled emitted tokens per verification step, including the correction token. Serving throughput divides returned tokens by workload wall time, including drain. Ablation selections use the harmonic mean of workload ratios.
+
+\subsection{Main results}
+\label{sec:main-results}
+Table~\ref{tab:main} compares RelaySpec with the relevant reference drafter on each target and workload.
+
+RelaySpec improves throughput on all five LoRA-fine-tuned targets, from $1.06\times$ the unadapted drafter on CodeAlpaca to $1.85\times$ on KiCad. Acceptance length also increases in every case. KiCad rises from 5.99 to 11.26 tokens per verification step.
+
+Every cross-transfer accelerates its target over autoregressive decoding. Qwen3-8B $\leftarrow$ Qwen3-4B reaches $1.002\times$ and $0.994\times$ native throughput on Math and GSM8K, but $0.842\times$ and $0.904\times$ on Code and Chat. Transfer across model families is weaker.
+
+Llama3.2-3B $\leftarrow$ Llama3.1-8B has no native drafter control. It reaches $1.61\times$ to $2.35\times$ autoregressive throughput (Table~\ref{tab:llama-transfer}).
+
+\begin{table}[t]
+\centering
+\caption{Single-request results on 128 prompts per workload. AR is autoregressive throughput in tokens/s. Speedup is relative to AR. The reference is unadapted for LoRA-fine-tuned targets and native for cross-transfer. Fit time is the selected map fit on two L40S GPUs and applies to every workload for that target and drafter. Bold marks RelaySpec/reference ratios at or above $1.00\times$. Protocol: Appendix~\ref{app:experimental-protocol}.}
+\label{tab:main}
+\scriptsize
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{llrrrrrrr}
+\toprule
+& & & & \multicolumn{2}{c}{RelaySpec} & \multicolumn{2}{c}{Reference drafter} & \\
+\cmidrule(lr){5-6}\cmidrule(lr){7-8}
+Target $\leftarrow$ drafter & Workload & Shared fit time (s) & AR (tok/s) & Speedup & $\tau$ & Speedup & $\tau$ & $\times$ref \\
+\midrule
+\multicolumn{9}{l}{\emph{LoRA-fine-tuned target. Reference: unadapted drafter.}} \\
+Qwen3-4B + GSM8K LoRA & GSM8K & 159.8 & 38.81 & 4.63$\times$ & 5.99 & 3.32$\times$ & 4.47 & \textbf{1.40$\times$} \\
+Qwen3-4B + KiCad LoRA & KiCad & 319.3 & 38.42 & 8.13$\times$ & 11.26 & 4.39$\times$ & 5.99 & \textbf{1.85$\times$} \\
+Qwen3-4B + NanoCoder LoRA & NanoCoder & 165.4 & 39.01 & 4.40$\times$ & 5.55 & 3.87$\times$ & 5.11 & \textbf{1.14$\times$} \\
+Qwen3-8B + GSM8K LoRA & GSM8K & 243.6 & 37.89 & 4.59$\times$ & 6.35 & 3.40$\times$ & 4.76 & \textbf{1.35$\times$} \\
+Qwen3-8B + CodeAlpaca LoRA & CodeAlpaca & 241.2 & 37.56 & 4.32$\times$ & 5.63 & 4.07$\times$ & 5.62 & \textbf{1.06$\times$} \\
+\midrule
+\multicolumn{9}{l}{\emph{Cross-transfer. Reference: native drafter.}} \\
+Qwen3-8B $\leftarrow$ Qwen3-4B & Math & \multirow{4}{*}{1494.6} & 37.84 & 5.82$\times$ & 7.98 & 5.81$\times$ & 8.21 & \textbf{1.00$\times$} \\
+ & GSM8K & & 37.76 & 4.68$\times$ & 6.24 & 4.71$\times$ & 6.48 & 0.99$\times$ \\
+ & Code & & 37.50 & 3.40$\times$ & 4.74 & 4.04$\times$ & 5.64 & 0.84$\times$ \\
+ & Chat & & 35.09 & 2.31$\times$ & 2.89 & 2.55$\times$ & 3.32 & 0.90$\times$ \\
+\addlinespace[1pt]
+Qwen3-4B $\leftarrow$ Qwen3-8B & Math & \multirow{4}{*}{1145.4} & 39.42 & 5.49$\times$ & 7.66 & 5.70$\times$ & 8.09 & 0.96$\times$ \\
+ & GSM8K & & 39.72 & 4.27$\times$ & 5.99 & 4.46$\times$ & 6.34 & 0.96$\times$ \\
+ & Code & & 39.60 & 3.30$\times$ & 4.89 & 4.34$\times$ & 6.26 & 0.76$\times$ \\
+ & Chat & & 40.48 & 2.01$\times$ & 2.83 & 2.36$\times$ & 3.36 & 0.85$\times$ \\
+\addlinespace[1pt]
+Llama3.1-8B $\leftarrow$ Qwen3-4B & Math & \multirow{4}{*}{1233.0} & 41.00 & 2.97$\times$ & 4.63 & 3.17$\times$ & 5.12 & 0.94$\times$ \\
+ & GSM8K & & 41.11 & 2.21$\times$ & 3.23 & 3.10$\times$ & 4.42 & 0.71$\times$ \\
+ & Code & & 40.79 & 1.98$\times$ & 3.05 & 3.00$\times$ & 4.52 & 0.66$\times$ \\
+ & Chat & & 40.96 & 1.48$\times$ & 2.06 & 2.79$\times$ & 3.95 & 0.53$\times$ \\
+\bottomrule
+\end{tabular}
+\setlength{\tabcolsep}{6pt}
+\end{table}
+
+\begin{table}[t]
+\centering
+\caption{Llama3.2-3B $\leftarrow$ Llama3.1-8B on 128 prompts per workload. Speedup is relative to autoregressive decoding. The 1,234.8-second selected fit is shared by all workload rows. Protocol: Appendix~\ref{app:experimental-protocol}.}
+\label{tab:llama-transfer}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Workload & Fit time (s) & AR (tok/s) & Speedup & $\tau$ \\
+\midrule
+Math & \multirow{4}{*}{1234.8} & 61.90 & 2.35$\times$ & 4.78 \\
+GSM8K & & 64.45 & 2.18$\times$ & 4.16 \\
+Code & & 63.09 & 1.88$\times$ & 3.44 \\
+Chat & & 64.73 & 1.61$\times$ & 2.97 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation studies}
+\label{sec:ablations}
+We test map placement, training objective, nonlinearity, and supervision budget. Comparisons use matched settings within each ablation unless stated otherwise.
+
+\subsubsection{Where the trained parameters sit}
+\label{sec:ablation-placement}
+We compare: (a) five separate maps, with context $z=\sum_i F_iW_i h_i$; (b) a direct residual update $F+\Delta F$ to the fused projection; (c) LoRA weights in the drafter transformer; (d) one joint map on $[h_1;\ldots;h_5]$; and (e) rank-constrained corrections $W_i=I+B_iA_i$. We select the five separate maps because they have the highest harmonic mean across the three LoRA-fine-tuned workloads. Appendix~\ref{app:architecture-objective} reports all placement results.
+
+\subsubsection{Which objective trains the maps}
+\label{sec:ablation-objective}
+We select AUF for LoRA-fine-tuned targets and reconstruction MSE for cross-transfer. AUF has the best harmonic mean in the LoRA-fine-tuned comparison, while MSE has the best one in cross-transfer. Appendix~\ref{app:architecture-objective} gives every result.
+
+
+\subsubsection{Whether the maps need to be nonlinear}
+\label{sec:ablation-capacity}
+Using the selected five-map architecture and setting-specific objectives, we test whether nonlinearity helps. A parallel nonlinear branch changes throughput by $-2.07\%$ to $+2.97\%$ and trails the linear maps on five of seven workloads. In these single timing passes, it shows no consistent gain to justify its extra inference work. Appendix~\ref{app:architecture-objective} gives the full comparison.
+
+\subsubsection{How much supervision the maps need}
+\label{sec:ablation-budget}
+Figure~\ref{fig:scaling} varies training examples for the selected AUF LoRA-fine-tuning recipe and selected MSE cross-transfer recipe, and sampled anchors on LoRA-fine-tuned targets.
+
+\input{figures/scaling_figure}
+
+At 16 examples, LoRA-fine-tuned maps improve throughput by 0.5\% to 10.8\% over the unadapted drafter. Cross-transfer reaches only 15.6\% to 32.5\% of native throughput and is below autoregressive throughput on all four workloads. More examples improve all four cross-transfer workloads. In the anchor sweep, the five maps and drafter-transformer LoRA are nearly tied on KiCad at eight anchors ($+59.7\%$ and $+59.3\%$); the maps lead at 32 anchors ($+89.5\%$ and $+75.5\%$). These curves vary optimization steps along with supervision size.
+
+\subsection{Generalization to a second drafter family}
+\label{sec:eagle}
+We test the same input-map idea on frozen EAGLE-3 drafters. Its three streams use AUF for LoRA-fine-tuned targets and reconstruction for cross-transfer (Table~\ref{tab:eagle}).
+
+\begin{table}[t]
+\centering
+\caption{EAGLE-3 with three input maps, on 128 prompts per workload. References are unadapted for LoRA-fine-tuned targets and native for cross-transfer. Throughput is in tokens/s. Best of each pair is bold and second best is underlined. Protocol: Appendix~\ref{app:experimental-protocol}.}
+\label{tab:eagle}
+\scriptsize
+\setlength{\tabcolsep}{3.3pt}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & & \multicolumn{2}{c}{Tokens/s} & & \multicolumn{2}{c}{$\tau$} \\
+\cmidrule(lr){4-5}\cmidrule(lr){7-8}
+Setting & Workload & Shared fit time (s) & Reference & RelaySpec & $\times$ref & Reference & RelaySpec \\
+\midrule
+LoRA-fine-tuned Qwen3-4B, & GSM8K & 163.9 & \underline{71.19} & \textbf{120.35} & \textbf{1.69$\times$} & \underline{3.347} & \textbf{5.695} \\
+token supervision & NanoCoder & 184.2 & \underline{81.77} & \textbf{119.30} & \textbf{1.46$\times$} & \underline{3.852} & \textbf{5.668} \\
+ & KiCad & 1149.3 & \underline{73.82} & \textbf{151.86} & \textbf{2.06$\times$} & \underline{3.794} & \textbf{7.363} \\
+\midrule
+Qwen3-8B $\leftarrow$ Qwen3-4B, & Math & \multirow{4}{*}{787.9} & \underline{72.18} & \textbf{77.99} & \textbf{1.08$\times$} & \underline{3.627} & \textbf{3.638} \\
+reconstruction & GSM8K & & \underline{75.58} & \textbf{80.59} & \textbf{1.07$\times$} & \underline{3.713} & \textbf{3.840} \\
+ & Code & & \underline{63.88} & \textbf{65.53} & \textbf{1.03$\times$} & \textbf{3.351} & \underline{3.293} \\
+ & Chat & & \underline{61.82} & \textbf{63.41} & \textbf{1.03$\times$} & \textbf{3.186} & \underline{3.136} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+AUF maps improve EAGLE-3 throughput by $1.46\times$ to $2.06\times$ over its unadapted drafter on LoRA-fine-tuned targets~\citep{yang2026specauf}. Reconstruction maps reach $1.03\times$ to $1.08\times$ native mean throughput on Qwen3-8B cross-transfer.
+
+\subsection{Serving many targets from one drafter}
+\label{sec:serving}
+Figure~\ref{fig:serving} tests three LoRA-fine-tuned targets sharing one target backbone and one frozen drafter on a vLLM server.  Each target LoRA has its own learned five-map bank.  Thus, the system is a request-level hard mixture: one target-LoRA and its matching map bank are active for an entire request.  Figure~\ref{fig:serving} supplies this choice from the request's target identifier.  We also train a prompt-only hard router that selects one of the three target-LoRA/map-bank pairs before decoding.  It does not mix experts token by token.  Appendix~\ref{app:serving-details} gives the router training procedure, its complete measurements, and a pooled-map control.
+
+\input{figures/serving_figure}
+
+At 32 clients, adapted aggregate throughput is 4{,}324 tokens/s, versus 2{,}440 unadapted and 828 autoregressive. Appendix~\ref{app:serving-details} gives the 16-client comparison.
+
+Figure~\ref{fig:transfer-serving} shows Qwen3-8B $\leftarrow$ Qwen3-4B cross-transfer at 1, 8, 16, and 32 concurrent clients. RelaySpec has higher aggregate throughput than the native drafter on Math and GSM8K, and lower throughput on Code and Chat, at every measured client count. Appendix~\ref{app:serving-details} reports the 16-client measurements for all cross-transfer pairs.
+
+\input{figures/transfer_serving_figure}

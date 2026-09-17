@@ -3,7 +3,7 @@
 
 The \emph{original target} is the model used to train the available drafter, which we call the original target's \emph{native drafter}. The \emph{new target} is the model we want to accelerate.
 
-DFlash predicts several future tokens in parallel~\citep{chen2026dflash}. At each decoding step, it forms a block with the last token committed by the target, called the \emph{anchor}, followed by masked proposal positions. The released Qwen3-4B DFlash checkpoint has a default block size of 16, so each block contains one anchor and 15 proposals. We keep this setting. The DFlash reference generator also defaults to temperature zero, so we use greedy decoding. One drafter pass predicts all 15 proposals, and the target checks them in parallel. With greedy verification, speculative decoding is theoretically guaranteed to produce the same token sequence as greedy target-only decoding~\citep{leviathan2023speculative,chen2023sampling}.
+DFlash predicts several future tokens in parallel~\citep{chen2026dflash}. At each decoding step, it forms a block with the last token committed by the target, called the \emph{anchor}, followed by masked proposal positions. The released Qwen3-4B DFlash checkpoint has a default block size of 16, so each block contains one anchor and 15 proposals. We keep this setting. The DFlash reference generator also defaults to temperature zero, so we use greedy decoding. One drafter pass predicts all 15 proposals, and the target checks them in parallel.
 
 \subsection{The target-feature interface}
 

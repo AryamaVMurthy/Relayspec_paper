@@ -1,0 +1,136 @@
+{
+  "setting": "Qwen3-8B <- Qwen3-4B cross-transfer, vLLM, one L40S, 128 prompts per workload",
+  "source": "phase2_results.md: Optimized vLLM concurrency, T1",
+  "aggregate_definition": "returned tokens divided by workload wall time including drain",
+  "client_definition": "returned tokens divided by the sum of 128 client-side request latencies",
+  "rows": [
+    {
+      "task": "math",
+      "clients": 1,
+      "native": 276.0892,
+      "mapped": 292.2282,
+      "native_client_tps": 276.0945368076093,
+      "mapped_client_tps": 292.2365523503382
+    },
+    {
+      "task": "math",
+      "clients": 8,
+      "native": 1752.3877,
+      "mapped": 1840.9399,
+      "native_client_tps": 225.34864643150124,
+      "mapped_client_tps": 236.83801591248132
+    },
+    {
+      "task": "math",
+      "clients": 16,
+      "native": 2524.3059,
+      "mapped": 2716.2608,
+      "native_client_tps": 185.4233913994558,
+      "mapped_client_tps": 194.10000480281033
+    },
+    {
+      "task": "math",
+      "clients": 32,
+      "native": 2866.964,
+      "mapped": 3317.4305,
+      "native_client_tps": 118.13610562685093,
+      "mapped_client_tps": 123.11235814347158
+    },
+    {
+      "task": "gsm",
+      "clients": 1,
+      "native": 216.54,
+      "mapped": 227.9476,
+      "native_client_tps": 216.55863650681155,
+      "mapped_client_tps": 227.9550955809335
+    },
+    {
+      "task": "gsm",
+      "clients": 8,
+      "native": 1301.7095,
+      "mapped": 1448.2625,
+      "native_client_tps": 177.51552328888326,
+      "mapped_client_tps": 186.1001247181029
+    },
+    {
+      "task": "gsm",
+      "clients": 16,
+      "native": 2207.4294,
+      "mapped": 2262.0264,
+      "native_client_tps": 146.5458071222945,
+      "mapped_client_tps": 152.99623585847382
+    },
+    {
+      "task": "gsm",
+      "clients": 32,
+      "native": 2251.4677,
+      "mapped": 2612.5624,
+      "native_client_tps": 93.6149089100079,
+      "mapped_client_tps": 97.65625000000001
+    },
+    {
+      "task": "code",
+      "clients": 1,
+      "native": 192.4316,
+      "mapped": 176.5162,
+      "native_client_tps": 192.43438048982125,
+      "mapped_client_tps": 176.52320628855972
+    },
+    {
+      "task": "code",
+      "clients": 8,
+      "native": 1106.8665,
+      "mapped": 1045.0456,
+      "native_client_tps": 148.06337572194454,
+      "mapped_client_tps": 137.83106928176008
+    },
+    {
+      "task": "code",
+      "clients": 16,
+      "native": 1748.1943,
+      "mapped": 1548.4744,
+      "native_client_tps": 118.08711529651842,
+      "mapped_client_tps": 108.06589103717026
+    },
+    {
+      "task": "code",
+      "clients": 32,
+      "native": 1940.5186,
+      "mapped": 1826.4532,
+      "native_client_tps": 70.97657551716182,
+      "mapped_client_tps": 66.11767939653733
+    },
+    {
+      "task": "chat",
+      "clients": 1,
+      "native": 114.8256,
+      "mapped": 106.6839,
+      "native_client_tps": 114.82748940342886,
+      "mapped_client_tps": 106.68522130024246
+    },
+    {
+      "task": "chat",
+      "clients": 8,
+      "native": 705.5131,
+      "mapped": 682.4391,
+      "native_client_tps": 93.16243008099623,
+      "mapped_client_tps": 88.49958586331333
+    },
+    {
+      "task": "chat",
+      "clients": 16,
+      "native": 1091.1376,
+      "mapped": 1065.927,
+      "native_client_tps": 77.83057202362586,
+      "mapped_client_tps": 72.96047631112238
+    },
+    {
+      "task": "chat",
+      "clients": 32,
+      "native": 1349.441,
+      "mapped": 1273.8183,
+      "native_client_tps": 50.50726386706225,
+      "mapped_client_tps": 47.04021013673347
+    }
+  ]
+}

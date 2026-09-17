@@ -1,0 +1,97 @@
+{
+  "setting": "Qwen3-4B, three LoRA targets, oracle routing, 384 requests, vLLM on one L40S",
+  "source": "phase1_results.md: serving export, trial peak_clients_trial0, oracle policy",
+  "aggregate_definition": "returned tokens divided by workload wall time including drain",
+  "rows": [
+    {
+      "method": "ar",
+      "clients": 1,
+      "mean_request_tps": 64.3944743946676,
+      "aggregate_tps": 63.93236515952127
+    },
+    {
+      "method": "ar",
+      "clients": 4,
+      "mean_request_tps": 55.440449704695446,
+      "aggregate_tps": 226.27887318934705
+    },
+    {
+      "method": "ar",
+      "clients": 8,
+      "mean_request_tps": 49.43733001296542,
+      "aggregate_tps": 390.6974958096318
+    },
+    {
+      "method": "ar",
+      "clients": 16,
+      "mean_request_tps": 40.911296887460374,
+      "aggregate_tps": 595.4556409682889
+    },
+    {
+      "method": "ar",
+      "clients": 32,
+      "mean_request_tps": 31.009116903151593,
+      "aggregate_tps": 827.7307387034713
+    },
+    {
+      "method": "native",
+      "clients": 1,
+      "mean_request_tps": 270.2059848734735,
+      "aggregate_tps": 291.61440901826114
+    },
+    {
+      "method": "native",
+      "clients": 4,
+      "mean_request_tps": 192.75462614761042,
+      "aggregate_tps": 889.1117587869693
+    },
+    {
+      "method": "native",
+      "clients": 8,
+      "mean_request_tps": 171.82291519333862,
+      "aggregate_tps": 1534.730226284391
+    },
+    {
+      "method": "native",
+      "clients": 16,
+      "mean_request_tps": 124.67108544865552,
+      "aggregate_tps": 2097.747832777154
+    },
+    {
+      "method": "native",
+      "clients": 32,
+      "mean_request_tps": 75.22193848225976,
+      "aggregate_tps": 2439.743363254623
+    },
+    {
+      "method": "mapped",
+      "clients": 1,
+      "mean_request_tps": 390.7086962238815,
+      "aggregate_tps": 516.2385260179855
+    },
+    {
+      "method": "mapped",
+      "clients": 4,
+      "mean_request_tps": 283.22374382033064,
+      "aggregate_tps": 1572.0859876327802
+    },
+    {
+      "method": "mapped",
+      "clients": 8,
+      "mean_request_tps": 246.9871614384343,
+      "aggregate_tps": 2689.5250879408836
+    },
+    {
+      "method": "mapped",
+      "clients": 16,
+      "mean_request_tps": 175.93318031073878,
+      "aggregate_tps": 3693.0893134062853
+    },
+    {
+      "method": "mapped",
+      "clients": 32,
+      "mean_request_tps": 108.14430176763909,
+      "aggregate_tps": 4323.955743094702
+    }
+  ]
+}

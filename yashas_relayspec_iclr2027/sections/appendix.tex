@@ -1,3 +1,210 @@
+\section{Experimental protocol}
+\label{app:experimental-protocol}
+
+\paragraph{Training data and selected fits.}
+Table~\ref{tab:main} gives the DFlash fit time for each selected target and Table~\ref{tab:eagle} gives the corresponding EAGLE-3 time. All selected fits use two L40S GPUs and a global batch of eight. For Qwen3-4B LoRA-fine-tuned targets, DFlash trains five identity-initialized maps on 4{,}096 saved, target-generated responses from the task domain. It samples 32 valid response anchors per example, trains AUF for one epoch and uses a peak learning rate of $10^{-4}$. Qwen3-8B LoRA-fine-tuned targets use the same 4{,}096-response, 32-anchor, one-epoch AUF recipe and learning rate. Each response is capped at 4{,}096 tokens during generation, and each anchor has at most 15 supervised proposal positions.
+
+For DFlash cross-transfer, each selected fit trains five Xavier-initialized maps on 16{,}384 NuminaMath-derived trajectories with target-generated responses capped at 4{,}096 tokens~\citep{li2024numinamath}. The original and new targets process the same saved token sequences. Reconstruction supervises 25\% of prompt positions and a separate 25\% of response positions. It trains for three epochs with peak learning rate $10^{-3}$. Each cross-transfer fit is shared across its four evaluation workloads, so its optimizer-loop time is reported once per target--drafter pair in Tables~\ref{tab:main} and~\ref{tab:eagle}, not once per dataset. EAGLE-3 uses the same selected cross-transfer data, position sampling, epoch count, and learning rate, but trains three maps. For LoRA-fine-tuned targets, EAGLE-3 trains three identity-initialized maps with AUF on 4{,}096 saved responses, up to 32 response anchors per example, one epoch, and peak learning rate $10^{-4}$. Ablations in Section~\ref{sec:ablations} use their stated data sizes, supervision coverage, and objectives rather than these selected recipes.
+
+For the scaling experiments, counts denote training presentations. When a source dataset contains fewer than 4{,}096 available examples, examples are repeated to reach the required count.
+
+\paragraph{Single-request evaluation.}
+The DFlash measurements in Tables~\ref{tab:main} and~\ref{tab:llama-transfer} use BF16 Transformers inference with greedy decoding and one serial request per L40S GPU~\citep{wolf2020transformers}. Each workload has 128 fixed prompts. Generation stops at the natural end-of-sequence token or a 2{,}048-token response cap, except KiCad, which uses an 8{,}192-token cap. Thinking is disabled for Qwen3. Throughput is the arithmetic mean of each request's returned-token count divided by its elapsed generation time. Autoregressive, reference-drafter, and mapped-drafter measurements use the same prompt cohort and decoding contract. Acceptance length is the pooled emitted-token count divided by verification steps and includes the target's correction contribution. EAGLE-3 uses its own pinned tree settings and emitted-token counters, so its acceptance lengths are not numerically interchangeable with DFlash's.
+
+\paragraph{Concurrent serving.}
+Serving runs use vLLM 0.28.0, BF16, greedy decoding, and fixed prompts~\citep{kwon2023vllm}. Cross-transfer serving uses one L40S per engine, 128 prompts per workload, a 2{,}048-token response cap, and 16 concurrent clients for Table~\ref{tab:transfer-serving}. The Qwen3-8B transfer additionally measures 1, 8, and 32 clients. The LoRA-fine-tuned shared-serving experiment in Figure~\ref{fig:serving} sends a fixed mixture of 384 requests, 128 for each of three task adapters. Its response cap is 2{,}048 tokens for GSM8K and NanoCoder and 8{,}192 for KiCad. Serving throughput divides all returned tokens by workload wall time, including drain, rather than averaging per-request rates. Native, mapped, and autoregressive runs receive the same inputs.
+
+\subsection{Architecture and objective ablations}
+\label{app:architecture-objective}
+
+The placement comparison uses LoRA-fine-tuned Qwen3-4B targets and the same token-supervision setting for every row. The objective comparison uses identity-initialized maps for LoRA-fine-tuned targets and Xavier-initialized maps for Qwen3-8B $\leftarrow$ Qwen3-4B cross-transfer. Its cross-transfer rows use 8{,}192 examples, so they are separate recipe comparisons from the selected 16{,}384-example result in Table~\ref{tab:main}.
+
+\begin{table}[htbp]
+\centering
+\caption{Placement ablation on LoRA-fine-tuned Qwen3-4B targets. Throughput gains are percentages over the unadapted drafter. HM is the harmonic mean of workload ratios. Best in each result column is bold and second best is underlined.}
+\label{tab:ablation-placement}
+\small
+\setlength{\tabcolsep}{4.3pt}
+\begin{tabular}{lrrrrr}
+\toprule
+Trained object & Parameters & GSM8K (\%) & KiCad (\%) & NanoCoder (\%) & HM \\
+\midrule
+Five per-stream maps (RelaySpec) & 32.8M & $\mathbf{+37.6}$ & $\mathbf{+89.5}$ & $+8.1$ & $\mathbf{1.376}\times$ \\
+Single fused projection & 32.8M & $+32.4$ & $+44.5$ & $\underline{+8.2}$ & $1.265\times$ \\
+Draft-transformer LoRA, rank 128 & 36.7M & $\underline{+36.4}$ & $+75.5$ & $\mathbf{+9.8}$ & $\underline{1.355}\times$ \\
+Single joint map over all streams & 163.8M & $+24.3$ & $\underline{+88.4}$ & $-7.0$ & $1.244\times$ \\
+Rank-128 maps & 3.3M & $+3.2$ & $+58.4$ & $-28.8$ & $0.999\times$ \\
+Rank-56 maps & 1.4M & $-21.9$ & $+35.1$ & $-49.3$ & $0.751\times$ \\
+Rank-28 maps & 0.7M & $-43.1$ & $+12.8$ & $-62.5$ & $0.565\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Scaling fit times}
+\label{app:scaling-fit-times}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/relayspec_scaling_fit_times.pdf}
+\caption{Fit times for the scaling measurements in Figure~\ref{fig:scaling}.}
+\end{figure}
+
+\begin{table}[htbp]
+\centering
+\caption{Training recipes on LoRA-fine-tuned targets (top, relative to unadapted) and Qwen3-8B $\leftarrow$ Qwen3-4B (bottom, relative to native). Entries are throughput ratios. MSE50 and MSE100 use 50\% and 100\% of positions. Best in each setting and column is bold and second best is underlined.}
+\label{tab:ablation-objective}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrrr}
+\toprule
+Setting & Objective & \multicolumn{4}{c}{Workload} & HM \\
+\midrule
+ & & GSM8K & KiCad & NanoCoder & & \\
+\cmidrule(lr){3-5}
+LoRA-fine-tuned & Accept-until-fail & $\mathbf{1.376}\times$ & $\underline{1.895}\times$ & $\mathbf{1.081}\times$ & & $\mathbf{1.376}\times$ \\
+ & Decaying cross-entropy & $\underline{1.368}\times$ & $\mathbf{1.935}\times$ & $\underline{1.031}\times$ & & $\underline{1.353}\times$ \\
+ & Reconstruction, MSE50 & $1.011\times$ & $1.191\times$ & $0.977\times$ & & $1.052\times$ \\
+\midrule
+ & & Math & GSM8K & Code & Chat & \\
+\cmidrule(lr){3-6}
+Cross-transfer & Reconstruction, MSE100 & $\underline{0.998}\times$ & $\mathbf{0.990}\times$ & $\underline{0.828}\times$ & $\mathbf{0.891}\times$ & $\mathbf{0.921}\times$ \\
+ & Reconstruction, MSE50 & $\mathbf{0.999}\times$ & $\underline{0.975}\times$ & $\mathbf{0.832}\times$ & $\underline{0.888}\times$ & $\underline{0.919}\times$ \\
+ & Decaying cross-entropy & $0.886\times$ & $0.919\times$ & $0.406\times$ & $0.573\times$ & $0.623\times$ \\
+ & Accept-until-fail & $0.884\times$ & $0.911\times$ & $0.385\times$ & $0.558\times$ & $0.604\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Linear maps and nonlinear branches on matched training data. Throughput is in tokens/s. Best of each pair is bold and second best is underlined.}
+\label{tab:ablation-capacity}
+\small
+\begin{tabular}{llrrrrr}
+\toprule
+& & \multicolumn{2}{c}{Tokens/s} & & \multicolumn{2}{c}{$\tau$} \\
+\cmidrule(lr){3-4}\cmidrule(lr){6-7}
+Setting & Workload & Linear & Nonlinear & Change & Linear & Nonlinear \\
+\midrule
+LoRA-fine-tuned & GSM8K & \textbf{179.83} & \underline{177.94} & $-1.05\%$ & \textbf{5.988} & \underline{5.953} \\
+ & KiCad & \underline{312.47} & \textbf{321.76} & $+2.97\%$ & \underline{11.256} & \textbf{11.411} \\
+ & NanoCoder & \textbf{171.73} & \underline{169.74} & $-1.16\%$ & \textbf{5.552} & \underline{5.520} \\
+\midrule
+Cross-transfer & Math & \textbf{220.26} & \underline{215.71} & $-2.07\%$ & \textbf{7.984} & \underline{7.980} \\
+ & GSM8K & \textbf{176.87} & \underline{174.56} & $-1.31\%$ & \underline{6.242} & \textbf{6.257} \\
+ & Code & \underline{127.61} & \textbf{128.41} & $+0.63\%$ & \underline{4.739} & \textbf{4.782} \\
+ & Chat & \textbf{80.93} & \underline{80.78} & $-0.20\%$ & \underline{2.887} & \textbf{2.902} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Concurrent serving details}
+\label{app:serving-details}
+
+Table~\ref{tab:lora-serving-16} gives the 16-client point from Figure~\ref{fig:serving}. It serves a fixed, equal mixture of the three LoRA-fine-tuned targets. The following subsections give the separate multi-LoRA router and pooled-map experiments. Table~\ref{tab:transfer-serving} gives all measured cross-transfer pairs at 16 clients. The Qwen3-8B $\leftarrow$ Qwen3-4B pair is also shown across client counts in Figure~\ref{fig:transfer-serving}.
+
+\begin{table}[htbp]
+\centering
+\caption{LoRA-fine-tuned shared serving at 16 concurrent clients. The fixed mixture contains 384 requests, with 128 requests per target. Aggregate and mean per-request throughput are measured in tokens/s.}
+\label{tab:lora-serving-16}
+\small
+\begin{tabular}{lrrr}
+\toprule
+Mode & Aggregate throughput & Mean per-request throughput & $\tau$ \\
+\midrule
+Autoregressive & 595.46 & 40.91 & -- \\
+Unadapted drafter & 2097.75 & 124.67 & 5.832 \\
+RelaySpec & 3693.09 & 175.93 & 10.496 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{Multiple LoRAs and a learned router}
+
+The multi-LoRA experiment uses one BF16 Qwen3-4B target backbone, one frozen DFlash drafter, and the GSM8K, KiCad, and NanoCoder target LoRAs.  Each LoRA has a separate fusion-rank-56 AUF map bank.  Each bank is trained on 4{,}096 unique examples from its domain, with a 4{,}096-response-token cap, eight sampled anchors per response, 15 proposal labels per anchor, and 2{,}000 optimizer updates.  The maps use random-$A$/zero-$B$ initialization, AdamW at $10^{-4}$, 100 warmup steps followed by cosine decay, and global batch size 8 on two L40S GPUs.  The target, drafter transformer, normalization layers, embeddings, and output head remain frozen.  The three fits take 3.83, 10.51, and 4.54 minutes for GSM8K, KiCad, and NanoCoder, respectively.
+
+In the explicit-ID condition, the request specifies which target LoRA is active and selects its matching map bank.  For the learned condition, a frozen prompt-only hard router selects one pair before generation.  It is a multinomial logistic-regression classifier over word unigram and bigram TF--IDF features.  The router trains on 4{,}096 user prompts per domain with 32{,}768 maximum features, $C=1$, and L-BFGS.  It fits in 0.944 CPU seconds and reaches 99.740\% held-out source-domain accuracy.  The selected pair remains fixed throughout a response.  It is therefore a hard request-level mixture of LoRA/map experts, rather than a token-level mixture.
+
+\begin{table}[htbp]
+\centering
+\caption{Complete 12-client multi-LoRA map-bank results. Each repeat serves 384 requests, with 128 requests per target LoRA. Speedup is relative to the unadapted drafter.}
+\label{tab:lora-router}
+\small
+\begin{tabular}{lrrr}
+\toprule
+Selection & Repeat & Speedup & $\tau$ \\
+\midrule
+Explicit target ID & 0 & 1.3176$\times$ & 7.678 \\
+Explicit target ID & 1 & 1.3288$\times$ & 7.678 \\
+Learned hard router & 0 & 1.3212$\times$ & 7.680 \\
+Learned hard router & 1 & 1.3243$\times$ & 7.680 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{One pooled map across the three LoRAs}
+
+We also train one fusion-rank-56 AUF map bank on the union of the three domains.  It uses the same per-domain examples, response cap, anchors, labels, initialization, and optimizer settings as the separate banks.  Domain-homogeneous batches alternate round robin.  Each domain receives 2{,}000 updates, so the shared optimizer runs for 6{,}000 updates and sees 48{,}000 response presentations.  The pooled fit takes 27.12 minutes on two L40S GPUs.  Table~\ref{tab:lora-pooled} gives all measurements under explicit target IDs and the learned router.  The autoregressive and separate-bank controls were inherited without rerunning from the corresponding matched serving measurements.
+
+\begin{table*}[htbp]
+\centering
+\caption{Complete 12-client pooled-map results for the three-LoRA mixture. Aggregate throughput is measured in tokens/s. Fit time is measured in minutes on two L40S GPUs. A dash denotes a configuration with no mapper fit.}
+\label{tab:lora-pooled}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lllr rrr}
+\toprule
+Selection & Repeat & Configuration & Aggregate throughput (tokens/s) & $\tau$ & Speedup vs. autoregressive & Fit time (min) \\
+\midrule
+Explicit target ID & 0 & Autoregressive & 195.39 & -- & 1.0000$\times$ & -- \\
+ & 0 & Unadapted drafter & 1273.98 & 5.8553 & 6.5200$\times$ & -- \\
+ & 0 & Three map banks & 1678.61 & 7.6782 & 8.5909$\times$ & 3.83 / 10.51 / 4.54 \\
+ & 0 & One pooled map & 1671.89 & 7.6170 & 8.5565$\times$ & 27.12 \\
+ & 1 & Autoregressive & 194.40 & -- & 1.0000$\times$ & -- \\
+ & 1 & Unadapted drafter & 1273.32 & 5.8553 & 6.5500$\times$ & -- \\
+ & 1 & Three map banks & 1691.96 & 7.6782 & 8.7036$\times$ & 3.83 / 10.51 / 4.54 \\
+ & 1 & One pooled map & 1673.98 & 7.6170 & 8.6111$\times$ & 27.12 \\
+\midrule
+Learned hard router & 0 & Autoregressive & 195.45 & -- & 1.0000$\times$ & -- \\
+ & 0 & Unadapted drafter & 1280.52 & 5.8560 & 6.5518$\times$ & -- \\
+ & 0 & Three map banks & 1691.87 & 7.6798 & 8.6565$\times$ & 3.83 / 10.51 / 4.54 \\
+ & 0 & One pooled map & 1682.03 & 7.6188 & 8.6061$\times$ & 27.12 \\
+ & 1 & Autoregressive & 195.59 & -- & 1.0000$\times$ & -- \\
+ & 1 & Unadapted drafter & 1285.61 & 5.8560 & 6.5729$\times$ & -- \\
+ & 1 & Three map banks & 1702.59 & 7.6798 & 8.7048$\times$ & 3.83 / 10.51 / 4.54 \\
+ & 1 & One pooled map & 1695.52 & 7.6188 & 8.6687$\times$ & 27.12 \\
+\bottomrule
+\end{tabular}
+}
+\end{table*}
+
+\begin{table}[htbp]
+\centering
+\caption{Cross-transfer serving at 16 concurrent clients. Aggregate throughput is measured in tokens/s. The higher throughput is bold and the lower is underlined.}
+\label{tab:transfer-serving}
+\small
+\begin{tabular}{llrrr}
+\toprule
+Target $\leftarrow$ drafter & Workload & Native (tokens/s) & RelaySpec (tokens/s) & RelaySpec/native \\
+\midrule
+Qwen3-8B $\leftarrow$ Qwen3-4B & Math & \underline{2524.31} & \textbf{2716.26} & 1.076$\times$ \\
+ & GSM8K & \underline{2207.43} & \textbf{2262.03} & 1.025$\times$ \\
+ & Code & \textbf{1748.19} & \underline{1548.47} & 0.886$\times$ \\
+ & Chat & \textbf{1091.14} & \underline{1065.93} & 0.977$\times$ \\
+\midrule
+Qwen3-4B $\leftarrow$ Qwen3-8B & Math & \textbf{4482.42} & \underline{3710.76} & 0.828$\times$ \\
+ & GSM8K & \textbf{3160.99} & \underline{3078.87} & 0.974$\times$ \\
+ & Code & \textbf{2840.15} & \underline{2002.79} & 0.705$\times$ \\
+ & Chat & \textbf{1888.69} & \underline{1431.21} & 0.758$\times$ \\
+\midrule
+Llama3.1-8B $\leftarrow$ Qwen3-4B & Math & \textbf{1894.99} & \underline{1046.94} & 0.553$\times$ \\
+ & GSM8K & \textbf{1354.50} & \underline{853.13} & 0.630$\times$ \\
+ & Code & \textbf{1296.83} & \underline{636.97} & 0.491$\times$ \\
+ & Chat & \textbf{1440.04} & \underline{524.40} & 0.364$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Complete analysis probe results}
 \label{app:analysis-probes}
 
@@ -23,7 +230,7 @@ For each token position, let $z_0$ be the fused context without the learned maps
 
 \begin{table}[htbp]
 \centering
-\caption{Complete direction intervention results. Mean throughput is measured in tokens/s. Acceptance length $\tau$ is measured in tokens per verification step and includes the target contribution. Summed time is measured in seconds over 128 prompts. Gain and retained latency reduction are percentages relative to the matching dynamic controls.}
+\caption{Complete direction intervention results. Mean throughput is measured in tokens/s. Summed time is measured in seconds over 128 prompts. Gain and retained latency reduction are percentages relative to the matching dynamic controls.}
 \label{tab:app-direction}
 \small
 \resizebox{\linewidth}{!}{%
@@ -50,7 +257,7 @@ The scaling probes use folded static projections. Correction strength $\alpha$ s
 
 \begin{table}[htbp]
 \centering
-\caption{Complete correction-strength and whole-context scaling results. Mean throughput is measured in tokens/s. Acceptance length $\tau$ is measured in tokens per verification step. Gain and retained latency reduction are percentages relative to the matching static native and full controls.}
+\caption{Complete correction-strength and whole-context scaling results. Mean throughput is measured in tokens/s. Gain and retained latency reduction are percentages relative to the matching static native and full controls.}
 \label{tab:app-scaling}
 \small
 \resizebox{\linewidth}{!}{%
@@ -269,7 +476,7 @@ Random initial & 10.7415 & 7.48\% & 0.0000 & 4.9159 & 4.0375 \\
 \subsection{Complete live midpoint intervention}
 \label{app:midpoint-full}
 
-For each token-trained parent, the midpoint averages all five parent maps with the corresponding MSE maps. There is no retraining. Each endpoint uses 128 prompts. Mean and pooled throughput are measured in tokens/s. Acceptance length is measured in tokens per verification step. Total time is measured in seconds. Native and parent comparisons are shown with multiplication signs. Latency reduction is a percentage relative to the named cold parent. Endpoints were timed in separate passes.
+The live midpoint probe asks whether moving a token-trained interface toward a reconstructed interface changes decoding without further optimization. For each of the five feature streams, it averages the AUF or decay-CE map with the corresponding MSE map, using equal weight. The target, frozen drafter, prompts, and decoding settings do not change, and the midpoint is not retrained. Each parent, midpoint, and MSE endpoint uses 128 prompts on Code or MATH. Table~\ref{tab:app-midpoint} includes both token-trained parents and the common MSE endpoint for each workload. Mean and pooled throughput are measured in tokens/s. Acceptance length is measured in tokens per verification step. Total time is measured in seconds. Native and parent comparisons are shown with multiplication signs. Latency reduction is a percentage relative to the named token-trained parent. Endpoints were timed in separate passes.
 
 \begin{table}[htbp]
 \centering
@@ -297,6 +504,8 @@ MATH & Decay CE & Parent & 194.69 & 187.71 & $0.8858\times$ & $1.0000\times$ & 4
 \end{tabular}%
 }
 \end{table}
+
+On Code, the AUF midpoint increases mean throughput from 58.37 to 81.64 tokens/s and acceptance length from 2.3456 to 3.2512 tokens per verification step. The decay-CE midpoint likewise increases them from 61.56 to 84.68 tokens/s and from 2.4489 to 3.3368 tokens per step. Both MATH midpoints also improve both measurements relative to their token-trained parents. None of the four midpoints reaches the MSE endpoint. Because all five maps move together, this intervention does not identify one feature stream as the cause. It establishes improvement for these two tested workloads, not for untested workloads or arbitrary interpolation weights.
 
 \FloatBarrier
 \subsection{Complete warm AUF refinement results}
@@ -344,7 +553,7 @@ For MSE, the original and retry both use learning rate $10^{-3}$, so their only 
 
 \begin{table}[htbp]
 \centering
-\caption{Complete rectangular-identity endpoints. Mean throughput is measured in tokens/s. Acceptance length $\tau$ is measured in tokens per verification step. Native throughput ratios are shown with multiplication signs. Each workload uses 128 prompts.}
+\caption{Complete rectangular-identity endpoints. Mean throughput is measured in tokens/s. Native throughput ratios are shown with multiplication signs. Each workload uses 128 prompts.}
 \label{tab:app-identity-endpoints}
 \small
 \begin{tabular}{llrrr}
@@ -369,7 +578,7 @@ Chat & Decay CE & 61.11 & $0.6828\times$ & 2.183 \\
 
 \begin{table}[htbp]
 \centering
-\caption{Complete comparison with the original Xavier-initialized fits. Throughput columns are measured in tokens/s. Acceptance length columns are measured in tokens per verification step. Changes are percentages relative to the original fit.}
+\caption{Complete comparison with the original Xavier-initialized fits. Throughput columns are measured in tokens/s. Changes are percentages relative to the original fit.}
 \label{tab:app-identity-change}
 \scriptsize
 \begin{tabular}{llrrrrrr}
@@ -409,7 +618,7 @@ Decay CE & 29.54 & 0.985 \\
 \end{table}
 
 \FloatBarrier
-MSE retains the highest acceptance length on all four workloads and the highest measured throughput on MATH, Code, and Chat. AUF is faster on GSM8K in this single pass despite having a slightly lower acceptance length. There are no repeated timing trials, so this disagreement does not establish a stable throughput advantage or timing noise. The MSE initializer-only comparison supports retaining the selected Xavier initialization. The token-recipe retries show that their original initialization and learning rate are not the only settings under which they can learn, but do not isolate which change helped.
+MSE retains the highest acceptance length on all four workloads and the highest measured throughput on MATH, Code, and Chat. AUF is faster on GSM8K in this single pass despite having a slightly lower acceptance length. There are no repeated timing trials, so this does not establish a stable throughput advantage or timing noise. The MSE initializer-only comparison supports retaining the selected Xavier initialization. The token-recipe retries show that their original initialization and learning rate are not the only settings under which they can learn, but do not isolate which change helped.
 
 \clearpage
 \subsection{Additional completed probes not used in the main analysis}
@@ -450,7 +659,7 @@ The evaluated target, target LoRA, and prompts remain fixed while the complete f
 
 \begin{table}[ht!]
 \centering
-\caption{Complete foreign-bank results. Throughput is measured in tokens/s. Acceptance length $\tau$ is measured in tokens per verification step. Gain and retained latency reduction are percentages relative to the destination task's native and full controls.}
+\caption{Complete foreign-bank results. Throughput is measured in tokens/s. Gain and retained latency reduction are percentages relative to the destination task's native and full controls.}
 \label{tab:app-bank-swap}
 \small
 \begin{tabular}{llrrrr}
@@ -466,12 +675,13 @@ NanoCoder & KiCad & 148.12 & $-1.77\%$ & 4.990 & $-11.1\%$ \\
 \end{table}
 
 \subsubsection{Low-rank correction probes}
+\label{app:low-rank-corrections}
 
-Whole-map truncation applies SVD to $W_i$ and removes most of the identity path. Correction truncation applies SVD only to $W_i-I$ and then restores the identity. Every reported rank is per map. All exports still use a dense folded projection, so these measurements do not demonstrate a low-rank inference-speed benefit.
+To test how many singular directions of the learned change matter, we decompose each correction $W_i-I$, retain its leading $r$ singular directions, and add the truncated correction back to the identity map. This preserves the original interface where the discarded correction has no effect. For comparison, whole-map truncation decomposes $W_i$ itself and removes most of that identity path. Rank $r$ applies separately to each of the five maps. Tables~\ref{tab:app-rank-first} and~\ref{tab:app-rank-repeats} give the first pass and repeated timing with their matching controls. Retained latency reduction is $(T_{\mathrm{native}}-T_r)/(T_{\mathrm{native}}-T_{\mathrm{full}})$, where $T$ is summed request latency for the same prompt cohort and timing pass. All exports use a dense folded projection, so these results test the correction's structure rather than low-rank inference speed.
 
 \begin{table}[htbp]
 \centering
-\caption{Complete first-pass low-rank results. Throughput is measured in tokens/s. Acceptance length $\tau$ is measured in tokens per verification step. Gain and retained latency reduction are percentages relative to static controls.}
+\caption{Complete first-pass low-rank results. Throughput is measured in tokens/s. Gain and retained latency reduction are percentages relative to static controls.}
 \label{tab:app-rank-first}
 \scriptsize
 \begin{tabular}{lllrrrr}
@@ -500,7 +710,7 @@ NanoCoder & Correction & 2,048 & 166.49 & 10.41\% & 5.553 & 72.3\% \\
 
 \begin{table}[htbp]
 \centering
-\caption{Complete repeated timing results for selected correction ranks. Throughput is measured in tokens/s. Acceptance length $\tau$ is measured in tokens per verification step. Gain and retained latency reduction are percentages relative to the native and full controls from the same repeat.}
+\caption{Complete repeated timing results for selected correction ranks. Throughput is measured in tokens/s. Gain and retained latency reduction are percentages relative to the native and full controls from the same repeat.}
 \label{tab:app-rank-repeats}
 \scriptsize
 \begin{tabular}{llrrrr}

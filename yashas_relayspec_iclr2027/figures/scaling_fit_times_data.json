@@ -1,0 +1,361 @@
+{
+  "sources": [
+    "phase1_results.md: scaling table",
+    "phase2_results.md: MSE 50% coverage results",
+    "small_scaling.md: completed small-data extension"
+  ],
+  "unit": "optimizer-loop fit seconds on two L40S GPUs",
+  "lora_examples": [
+    {
+      "domain": "math",
+      "examples": 16,
+      "fit_seconds": 1.6
+    },
+    {
+      "domain": "math",
+      "examples": 128,
+      "fit_seconds": 5.9
+    },
+    {
+      "domain": "math",
+      "examples": 512,
+      "fit_seconds": 19.9
+    },
+    {
+      "domain": "math",
+      "examples": 1024,
+      "fit_seconds": 39.0
+    },
+    {
+      "domain": "math",
+      "examples": 2048,
+      "fit_seconds": 78.2
+    },
+    {
+      "domain": "math",
+      "examples": 4096,
+      "fit_seconds": 159.75759311811998
+    },
+    {
+      "domain": "math",
+      "examples": 8192,
+      "fit_seconds": 309.52218452095985
+    },
+    {
+      "domain": "math",
+      "examples": 12288,
+      "fit_seconds": 466.97136477194726
+    },
+    {
+      "domain": "math",
+      "examples": 16384,
+      "fit_seconds": 618.8797111520544
+    },
+    {
+      "domain": "kicad",
+      "examples": 16,
+      "fit_seconds": 2.3
+    },
+    {
+      "domain": "kicad",
+      "examples": 128,
+      "fit_seconds": 11.3
+    },
+    {
+      "domain": "kicad",
+      "examples": 512,
+      "fit_seconds": 37.7
+    },
+    {
+      "domain": "kicad",
+      "examples": 1024,
+      "fit_seconds": 85.2
+    },
+    {
+      "domain": "kicad",
+      "examples": 2048,
+      "fit_seconds": 163.7
+    },
+    {
+      "domain": "kicad",
+      "examples": 4096,
+      "fit_seconds": 319.25154255796224
+    },
+    {
+      "domain": "kicad",
+      "examples": 8192,
+      "fit_seconds": 662.5696266382001
+    },
+    {
+      "domain": "kicad",
+      "examples": 12288,
+      "fit_seconds": 1034.436440674588
+    },
+    {
+      "domain": "kicad",
+      "examples": 16384,
+      "fit_seconds": 1426.5628143800423
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 16,
+      "fit_seconds": 1.8
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 128,
+      "fit_seconds": 6.1
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 512,
+      "fit_seconds": 20.4
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 1024,
+      "fit_seconds": 40.4
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 2048,
+      "fit_seconds": 80.2
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 4096,
+      "fit_seconds": 165.36662476230413
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 8192,
+      "fit_seconds": 327.3232179051265
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 12288,
+      "fit_seconds": 490.1637491490692
+    },
+    {
+      "domain": "nanocoder",
+      "examples": 16384,
+      "fit_seconds": 656.5232654050924
+    }
+  ],
+  "lora_anchors": [
+    {
+      "domain": "math",
+      "architecture": "maps",
+      "anchors": 8,
+      "fit_seconds": 70.19876116607338
+    },
+    {
+      "domain": "math",
+      "architecture": "maps",
+      "anchors": 24,
+      "fit_seconds": 121.09142233198509
+    },
+    {
+      "domain": "math",
+      "architecture": "maps",
+      "anchors": 32,
+      "fit_seconds": 159.75759311811998
+    },
+    {
+      "domain": "math",
+      "architecture": "maps",
+      "anchors": 64,
+      "fit_seconds": 293.6629083612934
+    },
+    {
+      "domain": "math",
+      "architecture": "maps",
+      "anchors": 128,
+      "fit_seconds": 548.7806235551834
+    },
+    {
+      "domain": "math",
+      "architecture": "body",
+      "anchors": 8,
+      "fit_seconds": 79.17222662596032
+    },
+    {
+      "domain": "math",
+      "architecture": "body",
+      "anchors": 24,
+      "fit_seconds": 130.05507783219218
+    },
+    {
+      "domain": "math",
+      "architecture": "body",
+      "anchors": 32,
+      "fit_seconds": 163.48096746997908
+    },
+    {
+      "domain": "math",
+      "architecture": "body",
+      "anchors": 64,
+      "fit_seconds": 308.3480454967357
+    },
+    {
+      "domain": "math",
+      "architecture": "body",
+      "anchors": 128,
+      "fit_seconds": 582.1691037244163
+    },
+    {
+      "domain": "kicad",
+      "architecture": "maps",
+      "anchors": 8,
+      "fit_seconds": 178.18257793411613
+    },
+    {
+      "domain": "kicad",
+      "architecture": "maps",
+      "anchors": 24,
+      "fit_seconds": 260.2220773231238
+    },
+    {
+      "domain": "kicad",
+      "architecture": "maps",
+      "anchors": 32,
+      "fit_seconds": 319.25154255796224
+    },
+    {
+      "domain": "kicad",
+      "architecture": "maps",
+      "anchors": 64,
+      "fit_seconds": 448.97664255229756
+    },
+    {
+      "domain": "kicad",
+      "architecture": "maps",
+      "anchors": 128,
+      "fit_seconds": 788.1631591860205
+    },
+    {
+      "domain": "kicad",
+      "architecture": "body",
+      "anchors": 8,
+      "fit_seconds": 187.4690807298757
+    },
+    {
+      "domain": "kicad",
+      "architecture": "body",
+      "anchors": 24,
+      "fit_seconds": 248.67300831526518
+    },
+    {
+      "domain": "kicad",
+      "architecture": "body",
+      "anchors": 32,
+      "fit_seconds": 310.0278574200347
+    },
+    {
+      "domain": "kicad",
+      "architecture": "body",
+      "anchors": 64,
+      "fit_seconds": 450.06162220891565
+    },
+    {
+      "domain": "kicad",
+      "architecture": "body",
+      "anchors": 128,
+      "fit_seconds": 810.2730175098404
+    },
+    {
+      "domain": "nanocoder",
+      "architecture": "maps",
+      "anchors": 8,
+      "fit_seconds": 69.94306988967583
+    },
+    {
+      "domain": "nanocoder",
+      "architecture": "maps",
+      "anchors": 24,
+      "fit_seconds": 125.2754918821156
+    },
+    {
+      "domain": "nanocoder",
+      "architecture": "maps",
+      "anchors": 32,
+      "fit_seconds": 165.36662476230413
+    },
+    {
+      "domain": "nanocoder",
+      "architecture": "maps",
+      "anchors": 64,
+      "fit_seconds": 298.6559931198135
+    },
+    {
+      "domain": "nanocoder",
+      "architecture": "maps",
+      "anchors": 128,
+      "fit_seconds": 586.4291566489264
+    },
+    {
+      "domain": "nanocoder",
+      "architecture": "body",
+      "anchors": 8,
+      "fit_seconds": 81.90371846873313
+    },
+    {
+      "domain": "nanocoder",
+      "architecture": "body",
+      "anchors": 24,
+      "fit_seconds": 134.1444064481184
+    },
+    {
+      "domain": "nanocoder",
+      "architecture": "body",
+      "anchors": 32,
+      "fit_seconds": 168.7616890487261
+    },
+    {
+      "domain": "nanocoder",
+      "architecture": "body",
+      "anchors": 64,
+      "fit_seconds": 312.85022426908836
+    },
+    {
+      "domain": "nanocoder",
+      "architecture": "body",
+      "anchors": 128,
+      "fit_seconds": 620.335596498102
+    }
+  ],
+  "transfer_examples": [
+    {
+      "examples": 16,
+      "fit_seconds": 1.8
+    },
+    {
+      "examples": 128,
+      "fit_seconds": 10.6
+    },
+    {
+      "examples": 512,
+      "fit_seconds": 41.1
+    },
+    {
+      "examples": 1024,
+      "fit_seconds": 79.9
+    },
+    {
+      "examples": 2048,
+      "fit_seconds": 157.4
+    },
+    {
+      "examples": 4096,
+      "fit_seconds": 573.6
+    },
+    {
+      "examples": 8192,
+      "fit_seconds": 1067.3999999999999
+    },
+    {
+      "examples": 16384,
+      "fit_seconds": 2232.6
+    }
+  ]
+}

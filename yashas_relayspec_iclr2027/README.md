@@ -1,6 +1,6 @@
 # RelaySpec paper for ICLR 2027
 
-This is a fresh LaTeX project in the official anonymous review format. The title, abstract, introduction, preliminaries, related work, and their bibliography entries are drafted. An architecture diagram is included. The remaining sections are blank. The abstract reports results from the experimental reports. Those experiments have not been independently rerun.
+This LaTeX project uses the official anonymous review format. The abstract and main sections are drafted. Figures 1 and 2 compare single-request throughput with autoregressive decoding of each target. The abstract reports results from the experimental reports. Those experiments have not been independently rerun.
 
 ## Edit and compile
 
@@ -24,7 +24,7 @@ Initial main text must fit within 9 pages. Rebuttal and camera-ready main text m
 
 AI disclosure is required in the paper and submission form. Ethics and reproducibility statements are recommended. These statements are excluded from the main-text limit. Keep the AI-use and ethics statements within one page each. Fill them with accurate content before submission.
 
-The seven main section headings are the working outline for this project. They are not prescribed by ICLR. The introduction, preliminaries, and related work currently contain prose. Continue drafting and checking the remaining sections one at a time.
+The six main section headings are the working outline for this project. They are not prescribed by ICLR. DFlash background is included at the start of Method.
 
 ## Sources and final checks
 
@@ -38,10 +38,12 @@ Official sources checked on 15 September 2026:
 
 The template sets document formatting. It cannot ensure scientific correctness or satisfy submission-form obligations. Before submission, check anonymity throughout all artifacts, page count, citation accuracy, completed statements, authorship, OpenReview profiles, submission eligibility, reciprocal reviewing, dual-submission rules, and deadlines against the current official guidance. Follow the writing rules in the parent `AGENTS.md`.
 
-## Architecture figure
+## Figures
 
-`figures/relayspec_overview.pdf` is a vector diagram included in the manuscript. Its editable source is `figures/draw_overview.py`. Regenerate it with Python and Matplotlib. The prebuilt PDF is sufficient to compile the paper.
+`figures/relayspec_lora_ar.pdf` is Figure 1 and compares unchanged DFlash with RelaySpec on three LoRA-fine-tuned Qwen3-4B targets. `figures/relayspec_transfer_ar.pdf` is Figure 2 and compares a native Qwen3-8B drafter with the reused Qwen3-4B drafter on four workloads. Every plotted speedup uses the matching autoregressive target as the `1.00×` baseline. Regenerate both with `python3 figures/draw_speedups.py`. The script reads the saved AR comparisons in `../new_phase1.md` and `../new_phase2.md` and records the plotted values in `figures/speedups_data.json`.
+
+`figures/relayspec_overview.pdf` is the earlier architecture diagram. It is retained as an editable asset but is not included in the current paper.
 
 ## Agreed section structure
 
-Abstract, Introduction, Preliminaries, Related Work, Method, Experiments, Analysis, Conclusion. The abstract is unnumbered. Preliminaries uses `sections/background.tex` and covers definitions, notation, assumptions, and the existing DFlash computation. Method covers RelaySpec's maps, training procedures, and export. Experiments reports performance and controlled comparisons. Analysis explains map behavior and includes limitations. Required and recommended statements, references, and appendices follow the main text.
+Abstract, Introduction, Related Work, Method, Experiments, Analysis, Conclusion. The abstract is unnumbered. Method introduces the DFlash computation where it is needed, then covers RelaySpec's maps, training procedures, and export. Experiments reports performance and controlled comparisons. Analysis explains map behavior and includes limitations. Required and recommended statements, references, and appendices follow the main text.
